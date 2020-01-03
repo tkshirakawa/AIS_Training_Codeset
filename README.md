@@ -6,7 +6,7 @@ This codeset contains
 3) Neural network models of Keras+TensorFlow: CV-net, U-net and DeepLab v3+
 4) A converter code to convert the trained Keras model to a CoreML model for macOS
 
-> Original sources of neural network models
+> Original sources of neural network models<br>
 U-net : chuckyee/cardiac-segmentation, https://github.com/chuckyee/cardiac-segmentation
 DeepLab v3+ : bonlime/keras-deeplab-v3-plus, https://github.com/bonlime/keras-deeplab-v3-plus
 

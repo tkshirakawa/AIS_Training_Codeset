@@ -5,3 +5,5 @@ This codeset contains
 2) A training management code with custom loss, metrics, layers and variable learning rate
 3) Neural network models of Keras+TensorFlow: CV-net, U-net and DeepLab v3+
 4) A converter code to convert the trained Keras model to a CoreML model for macOS
+
+<img width="416" alt="panel_v20" src="https://user-images.githubusercontent.com/52600509/71713642-e9514b80-2e4d-11ea-9f91-8ece251c9eff.png">

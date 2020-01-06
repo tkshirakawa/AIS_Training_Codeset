@@ -69,10 +69,7 @@ import matplotlib.pyplot as plt
 # Select neural networks
 # from neural_networks import CV_net as NN
 from neural_networks import CV_net_2 as NN
-# from neural_networks import CV_net_21 as NN
-# from neural_networks import CV_net_3 as NN
 # from neural_networks import U_net as NN
-# from neural_networks import U_net_dilated as NN
 # from neural_networks import Deeplab_v3_plus as NN
 
 # Select optimizer
@@ -107,13 +104,16 @@ pram_monitor = ['val_mean_iou', 'max']
 # pram_monitor = ['val_mean_iou_rou', 'max']
 
 # Batch size
+# 16 for CV_net/CV\net2, 8 for U_net and Deeplab_v3_plus
+# pram_batch_size = 8
 pram_batch_size = 16
 
 # Define a learning rate at a point of epoch by 'pram_LR_points = [[epoch, learning rate], ...]'
 # pram_LR_points   = [[0, 7.81e-4], [5, 7.81e-4], [15, 6e-4], [30, 2e-4], [35, 1e-4], [50, 2e-5]]     # For aorta
 # pram_LR_points  = [[0, 7.81e-4], [30, 7.81e-4], [50, 6e-4], [100, 2e-4], [140, 1e-4], [200, 1e-5]]     # For heart
 # pram_LR_points   = [[0,2e-3], [50,2e-3], [80,1.5e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20191116
-pram_LR_points   = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20190903
+pram_LR_points   = [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]                     # For heart 20200106
+# pram_LR_points   = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20190903
 # pram_LR_points   = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [180,3e-4], [250,6e-5]]     # For heart 20190903
 # pram_LR_points   = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [120,1.1e-3], [180,3e-4], [250,1e-4]]       # For heart 20191107
 # pram_LR_points   = [[0,1e-3], [100,1e-3]]       # For heart 20191118 Paper

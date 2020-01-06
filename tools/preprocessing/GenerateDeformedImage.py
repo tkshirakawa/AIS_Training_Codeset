@@ -44,23 +44,18 @@ def makeDirsByDeletingOld(path):
         shutil.rmtree(path)
     os.makedirs(path)
 
-# v1 = 6.5
-# v2 = 1.1
-# v3 = 127.5
-# v4 = 127.5
-# v1 = 6.5
-# v2 = 1.2
-# v3 = 127.5
-# v4 = 127.5
-# lut = [ np.uint8( np.clip( (255.0 / (1.0 + np.exp(-v1 * (i - v3) / 255.0)) - v4) * v2 + 127.5, 0, 255) ) for i in range(256)]
-# lut = [ np.uint8( np.clip(255.0 / (1.0 + np.exp(-v1 * (i - 127.5) / 255.0)) + v2, 0, 255) ) for i in range(256)]
 
-def shiftHisto(image):
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+
+
+def applyCLAHE(image, clipLimit=1.4, tileGridSize=(4,4)):
+    clahe = cv2.createCLAHE(clipLimit=clipLimit, tileGridSize=tileGridSize)
     return clahe.apply(image)
-    # return cv2.equalizeHist(image)
-    # img_tmp = np.array([ lut[value] for value in image.flat], dtype=np.uint8)
-    # return img_tmp.reshape(image.shape)
+
+
+
+
+def applyBilateralFilter(image, size=5, sigma1=10, sigma2=10):
+    return cv2.bilateralFilter(image, size, sigma1, sigma2)
 
 
 
@@ -79,10 +74,10 @@ def generateDeformedImage(format_ext, data_dir, dummy, modality, trimming):
         print('### ERROR: Use jpg or png for input and result images!')
         sys.exit()
 
-    if modality == 'image':
-        OC_dirpath = [data_dir+'_O', data_dir+'_C']   # [ Original, Contrast ]
-    elif modality == 'mask':
-        OC_dirpath = [data_dir+'_O']                     # [ Original ]
+    if modality == 'image':         # [ Original, CLAHE, bilateralFilter, CLAHE+bilateralFilter ]
+        outputDirpath = [data_dir+'_O', data_dir+'_C', data_dir+'_B', data_dir+'_A']
+    elif modality == 'mask':        # [ Original ]
+        outputDirpath = [data_dir+'_O']
     else:
         print('### ERROR: Use image or mask!')
         sys.exit()
@@ -101,7 +96,7 @@ def generateDeformedImage(format_ext, data_dir, dummy, modality, trimming):
         clipTB = 0
 
 
-    for dirpath in OC_dirpath:
+    for dirpath in outputDirpath:
 
         makeDirsByDeletingOld(dirpath)
         makeDirsByDeletingOld(dirpath+'_HT')
@@ -121,13 +116,22 @@ def generateDeformedImage(format_ext, data_dir, dummy, modality, trimming):
         img_src_tmp = img_src_original[clipTB:200-clipTB, clipLR:200-clipLR]
         print('Input : ' + fpath)
 
-        for dirpath in OC_dirpath:
+        for dirpath in outputDirpath:
 
             # Create color-changed images
             if dirpath[-1] == 'O':      # Original
-                img_src = cv2.copyMakeBorder(img_src_tmp, clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
-            elif dirpath[-1] == 'C':    # Contrast
-                img_src = cv2.copyMakeBorder(shiftHisto(img_src_tmp), clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+                img_src = cv2.copyMakeBorder(img_src_tmp,
+                                                clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+            elif dirpath[-1] == 'C':    # CLAHE
+                img_src = cv2.copyMakeBorder(applyCLAHE(img_src_tmp),
+                                                clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+            elif dirpath[-1] == 'B':    # bilateralFilter
+                img_src = cv2.copyMakeBorder(applyBilateralFilter(img_src_tmp),
+                                                clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+            elif dirpath[-1] == 'A':    # CLAHE+bilateralFilter
+                img_src = cv2.copyMakeBorder(applyBilateralFilter(applyCLAHE(img_src_tmp)),
+                                                clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+
             cv2.imwrite(os.path.join(dirpath, filename), img_src)
 
             # Height / width

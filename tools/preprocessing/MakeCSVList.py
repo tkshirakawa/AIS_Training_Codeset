@@ -32,9 +32,13 @@ if sys.argv[1] == '-h':
 #                      'x_O', 'x_O_CP0', 'x_O_CP1', 'x_O_CP2', 'x_O_CP3', 'x_O_CP4', 'x_O_DKM', 'x_O_DKP', 'x_O_HSR', 'x_O_HSL', 'x_O_HT', 'x_O_RTM', 'x_O_RTP', 'x_O_WD' ]
 # dirNameListY = ['y', 'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD',
 #                      'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD' ]
-dirNameListX = ['x_C', 'x_C_CP0', 'x_C_CP1', 'x_C_CP2', 'x_C_CP3', 'x_C_CP4', 'x_C_DKM', 'x_C_DKP', 'x_C_HSR', 'x_C_HSL', 'x_C_HT', 'x_C_RTM', 'x_C_RTP', 'x_C_WD',
+dirNameListX = ['x_A', 'x_A_CP0', 'x_A_CP1', 'x_A_CP2', 'x_A_CP3', 'x_A_CP4', 'x_A_DKM', 'x_A_DKP', 'x_A_HSR', 'x_A_HSL', 'x_A_HT', 'x_A_RTM', 'x_A_RTP', 'x_A_WD',
+                'x_B', 'x_B_CP0', 'x_B_CP1', 'x_B_CP2', 'x_B_CP3', 'x_B_CP4', 'x_B_DKM', 'x_B_DKP', 'x_B_HSR', 'x_B_HSL', 'x_B_HT', 'x_B_RTM', 'x_B_RTP', 'x_B_WD',
+                'x_C', 'x_C_CP0', 'x_C_CP1', 'x_C_CP2', 'x_C_CP3', 'x_C_CP4', 'x_C_DKM', 'x_C_DKP', 'x_C_HSR', 'x_C_HSL', 'x_C_HT', 'x_C_RTM', 'x_C_RTP', 'x_C_WD',
                 'x_O', 'x_O_CP0', 'x_O_CP1', 'x_O_CP2', 'x_O_CP3', 'x_O_CP4', 'x_O_DKM', 'x_O_DKP', 'x_O_HSR', 'x_O_HSL', 'x_O_HT', 'x_O_RTM', 'x_O_RTP', 'x_O_WD' ]
 dirNameListY = ['y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD',
+                'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD',
+                'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD',
                 'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD' ]
 
 csvFile = open(os.path.join(sys.argv[1], 'MakeCSVList_result.csv'), 'w', newline='', encoding='utf-8')

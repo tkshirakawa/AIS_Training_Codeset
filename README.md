@@ -13,4 +13,4 @@ DeepLab v3+ : bonlime/keras-deeplab-v3-plus, https://github.com/bonlime/keras-de
 *2 You need to install coremltools from Apple to use the converter<br>
 coremltools : Apple, https://github.com/apple/coremltools
 
-<img width="416" alt="panel_v20" src="https://user-images.githubusercontent.com/52600509/71713642-e9514b80-2e4d-11ea-9f91-8ece251c9eff.png">
+<img width="1223" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">

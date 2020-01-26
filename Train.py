@@ -48,7 +48,7 @@ if sys.argv[2] == '-h':
     print('  argv[2] : Path to a CSV/.h5 file for training image paths')
     print('  argv[3] : Path to a CSV/.h5 file for validation image paths')
     print('  argv[4] : Path to a directory to save results in it')
-    print('  argv[5] : Training mode: 0=Normal, 1=Resume the following model, 2=Boost the following model weights')
+    print('  argv[5] : Training mode: 0=Normal, 1=Resume by load_model(), 2=Retrain by load_weights()')
     print('  argv[6] : Not used')       # print('  argv[6] : Path to a model for Mode-1 or Mode-2')
     print('  argv[7] : Initial epoch to resume training for Mode-1')
     print('  NOTE : Input images must be 200x200 gray-scale without alpha values')
@@ -200,13 +200,13 @@ def Train():
         NN_model_name = 'Resumed model'
         NN_model_descript = 'Resume training'
 
-    # Normal or Boost training
+    # Normal training or Retraining
     elif sys.argv[5] == '0' or sys.argv[5] == '2':
         init_epoch = LR_params['graph'][0][0]       # Initial epoch of train (starting from zero)
         number_of_epochs = LR_params['graph'][-1][0]
 
         if sys.argv[5] == '0': training_mode = 'Normal training'
-        else:                  training_mode = 'Boost training'
+        else:                  training_mode = 'Retraining with trained wieghts'
         try:    NN_model_name = NN.Model_Name()
         except: NN_model_name = NN.__name__
         try:    NN_model_descript = NN.Model_Description()

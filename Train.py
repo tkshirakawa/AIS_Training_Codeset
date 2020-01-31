@@ -3,34 +3,7 @@
     e-mail: tkshirakawa@gmail.com
 
     Released under the BSD 3-Clause License
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
-
-
 
 
 ##### For TensorFlow v2.0 #####
@@ -182,9 +155,9 @@ def Train():
     # LR_params['graph'] = [[0, 7.81e-4], [2, 7.81e-4], [10, 2e-5]]     # For bone
 
     # Other parameters to control learning rate can be overwritten here
-    # LR_params['step']       = [1.0, 1.0]
-    # LR_params['limit']      = [0.25, 4.0]
-    # LR_params['patience']   = [8, 8]
+    LR_params['step']       = [1.0, 1.0]
+    LR_params['limit']      = [0.25, 4.0]
+    LR_params['patience']   = [8, 8]
 
 
     # Epoch and other parameters
@@ -249,13 +222,13 @@ def Train():
             global LR_multiplier
 
             mont_val = logs.get(LR_params['monitor_for_best'][0])
-            print('Monitoring value for saving the best: {0} = {1}'.format(LR_params['monitor_for_best'][0], mont_val))
+            print('{0} (in this epoch) = {1}'.format(LR_params['monitor_for_best'][0], mont_val))
 
             if not self.validation_monitor_improved(mont_val):
                 self.n_good = 0
                 self.n_bad += 1
                 step = LR_params['step'][0]
-                print('Counts of epochs with unimproved result: {0} /{1}'.format(self.n_bad, LR_params['patience'][0]))
+                print('Counts of epochs with UN-improved result: {0} /{1}'.format(self.n_bad, LR_params['patience'][0]))
                 if self.n_bad >= LR_params['patience'][0] and step != 1.0:
                     if   step < 1.0: LR_multiplier = max(LR_params['limit'][0], LR_multiplier * step)
                     elif step > 1.0: LR_multiplier = min(LR_params['limit'][0], LR_multiplier * step)
@@ -509,7 +482,7 @@ def Train():
     ax1.set_ylim([0.001, 1.0])
     ax2.set_ylabel('Metrics')
     ax2.set_yscale("log")
-    ax2.set_ylim([0.8, 1.0])
+    ax2.set_ylim([0.7, 1.0])
 
     h1, l1 = ax1.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()

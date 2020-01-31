@@ -1,20 +1,3 @@
-'''
-    Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
-    e-mail: tkshirakawa@gmail.com
-    
-    
-    Released under the BSD license.
-    URL: https://opensource.org/licenses/BSD-2-Clause
-    
-    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-    
-    1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
-
-
 
 
 from keras.models import Model
@@ -26,54 +9,63 @@ from keras.layers.advanced_activations import ReLU, LeakyReLU, PReLU, ELU
 from keras.initializers import Constant
 from keras import backend as K
 
-
-
-
-def Model_Name():
-    return 'NN_AIS_sample'
-
-
-
-
-def Model_Description():
-    return 'Neural network model for A.I.Segmentation (SAMPLE)\n\
-            Constructed for organ segmentation from medical images\n\
-            Copyright (c) 2019-2020, Takashi Shirakawa\n\
-            URL: https://compositecreatures.jimdofree.com/a-i-segmentation/'
+# If you want to use custom layers
+# The search path for Custom_layers must be the path from Train.py,
+# because this NN model file is called in Train.py.
+from neural_networks.Custom_layers import Swish
 
 
 
 
-# Implementation of a custom layer, Swish
-# Knowledge source : Custom Layers in Core ML written by Matthijs Hollemans
-# https://machinethink.net/blog/coreml-custom-layers/
+####################################################################################################
+####    Descriptions and definitions
+####################################################################################################
 
-class Swish(Layer):
-    def __init__(self, **kwargs):
-        super(Swish, self).__init__(**kwargs)
-
-    def build(self, input_shape):
-        super(Swish, self).build(input_shape)
-
-    def call(self, x):
-        return K.sigmoid(x) * x
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
+def Model_Name(): return 'NN_AIS_sample'
 
 
+def Model_Description(): return 'Neural network model for A.I.Segmentation (SAMPLE)\n\
+                            Constructed for organ segmentation from medical images\n\
+                            Copyright (c) 2019-2020, Takashi Shirakawa\n\
+                            URL: https://compositecreatures.jimdofree.com/a-i-segmentation/'
 
 
-# For conversion to CoreML model
-# Dictionary of custom layers used in the following Build_Model
-# If you use custom layers, "return { 'custom_layer1_name': custom_layer1_def, 'custom_layer2_name': custom_layer2_def, ... }".
-# If you do not use custom layers, just "return {}".
-def Custom_Layers():
-    return { 'Swish': Swish }
-    # return {}
+'''
+    Dictionary of custom layers used in the following Build_Model().
+    This will be used for conversion to CoreML model.
+    Use the same name for keys and values in this dictionary.
+
+    If you use custom layers, "return { 'custom_layer1_name': custom_layer1_def, 'custom_layer2_name': custom_layer2_def, ... }".
+    
+    If you do not use custom layers, just "return {}".
+'''
+def Custom_Layers(): return { 'Swish': Swish }      # return {}
+
+
+'''
+    Define a batch size used for training.
+'''
+def Batch_Size(): return 16
+
+
+'''
+    Define learning rates at the points of epochs : [[epoch, learning rate], ...].
+    Learning rates between epochs will be interpolated linearly.
+    The epoch value in the last component of this list is the total epoch number when training finishes.
+'''
+# def Learning_Rate_Lsit(): return [[0,3e-3], [2,3e-3]]   # TEST
+# def Learning_Rate_Lsit(): return [[0,3e-3], [20,3e-3], [50,2e-3], [80,5e-4]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
+def Learning_Rate_Lsit(): return [[0, 5e-3], [5, 1.5e-2], [10, 1.5e-2], [20, 1e-2], [30, 7.5e-3], [50, 5e-3]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]
 
 
 
+
+####################################################################################################
+####    Main neural network
+####################################################################################################
 
 def ActivationBy(function='relu', value=0.2, max_value=None, threshold=0.0):
 
@@ -100,10 +92,19 @@ def ActivationBy(function='relu', value=0.2, max_value=None, threshold=0.0):
 
 
 
+'''
+    Build and return Keras model
+
+    Input/output images are grayscale = 1 channel per pixel.
+    Type of the pixels is float normalized between 0.0 to 1.0.
+    (Please note that the pixel values are NOT 8-bit unsigned char ranging between 0 to 255)
+
+    Dimensions
+    OpenCV : HEIGHT x WIDTH
+    Keras  : HEIGHT x WIDTH x CHANNEL
+'''
 def Build_Model():
 
-    # OpenCV(grayscale) = HEIGHT x WIDTH
-    # Keras = HEIGHT x WIDTH x CHANNEL
     # Do not change "name='input'", because the name is used to identify the input layer in A.I.Segmentation.
     inputs = Input(shape=(200, 200, 1), name='input')
 
@@ -127,7 +128,7 @@ def Build_Model():
 
 
     # Output
-    # Do not change "name='output'", because the name is used to identify the input layer in A.I.Segmentation.
+    # Do not change "name='output'", because the name is used to identify the output layer in A.I.Segmentation.
     outputs = Activation('sigmoid', name='output')(cx)
 
 

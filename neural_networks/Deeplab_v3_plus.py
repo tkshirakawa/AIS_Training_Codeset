@@ -73,33 +73,52 @@ from keras import backend as K
 
 
 
-# Added for AIS, Takashi Shirakawa, Dec, 2019
-def Model_Name():
-    return 'Deeplab V3+'
+####################################################################################################
+####    Descriptions and definitions
+####################################################################################################
+
+def Model_Name(): return 'Deeplab V3+'
 
 
+def Model_Description(): return 'Deeplab V3+ implementation for A.I.Segmentation\n\
+                            Revised from the following original.\n\
+                            - Original codes -\n\
+                            URL: https://github.com/bonlime/keras-deeplab-v3-plus\n\
+                            - Original copyrights -\n\
+                            Copyright (c) 2018 Emil Zakirov\n\
+                            Released under the MIT license\n\
+                            URL: https://github.com/bonlime/keras-deeplab-v3-plus/blob/master/LICENSE'
 
 
-# Added for AIS, Takashi Shirakawa, Dec, 2019
-def Model_Description():
-    return 'Deeplab V3+ implementation for A.I.Segmentation\n\
-            Revised from the following original.\n\
-            - Original codes -\n\
-            URL: https://github.com/bonlime/keras-deeplab-v3-plus\n\
-            - Original copyrights -\n\
-            Copyright (c) 2018 Emil Zakirov\n\
-            Released under the MIT license\n\
-            URL: https://github.com/bonlime/keras-deeplab-v3-plus/blob/master/LICENSE'
+'''
+    Dictionary of custom layers used in the following Build_Model().
+    This will be used for conversion to CoreML model.
+    Use the same name for keys and values in this dictionary.
+
+    If you use custom layers, "return { 'custom_layer1_name': custom_layer1_def, 'custom_layer2_name': custom_layer2_def, ... }".
+    
+    If you do not use custom layers, just "return {}".
+'''
+def Custom_Layers(): return {}
 
 
+'''
+    Define a batch size used for training.
+'''
+def Batch_Size(): return 12
 
 
-# Added for AIS, Takashi Shirakawa, Dec, 2019
-# Dictionary of custom layers used in the following Build_Model() for conversion to CoreML model
-# Use the same name for keys and values of the following dictionary
-def Custom_Layers():
-    return {}
-    # return { 'BilinearUpsampling': BilinearUpsampling }
+'''
+    Define learning rates at the points of epochs : [[epoch, learning rate], ...].
+    Learning rates between epochs will be interpolated linearly.
+    The epoch value in the last component of this list is the total epoch number when training finishes.
+'''
+# def Learning_Rate_Lsit(): return [[0,3e-3], [2,3e-3]]   # TEST
+# def Learning_Rate_Lsit(): return [[0,3e-3], [20,3e-3], [50,2e-3], [80,5e-4]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
+def Learning_Rate_Lsit(): return [[0, 5e-3], [5, 1.5e-2], [10, 1.5e-2], [20, 1e-2], [30, 7.5e-3], [50, 5e-3]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]
 
 
 
@@ -185,13 +204,11 @@ def SepConv_BN(x, filters, prefix, stride=1, kernel_size=3, rate=1, depth_activa
 
     if not depth_activation:
         x = Activation('relu')(x)
-    x = DepthwiseConv2D((kernel_size, kernel_size), strides=(stride, stride), dilation_rate=(rate, rate),
-                        padding=depth_padding, use_bias=False, name=prefix + '_depthwise')(x)
+    x = DepthwiseConv2D((kernel_size, kernel_size), strides=(stride, stride), dilation_rate=(rate, rate), padding=depth_padding, use_bias=False, name=prefix + '_depthwise')(x)
     x = BatchNormalization(name=prefix + '_depthwise_BN', epsilon=epsilon)(x)
     if depth_activation:
         x = Activation('relu')(x)
-    x = Conv2D(filters, (1, 1), padding='same',
-               use_bias=False, name=prefix + '_pointwise')(x)
+    x = Conv2D(filters, (1, 1), padding='same', use_bias=False, name=prefix + '_pointwise')(x)
     x = BatchNormalization(name=prefix + '_pointwise_BN', epsilon=epsilon)(x)
     if depth_activation:
         x = Activation('relu')(x)
@@ -294,30 +311,19 @@ def _inverted_res_block(inputs, expansion, stride, alpha, filters, block_id, ski
     prefix = 'expanded_conv_{}_'.format(block_id)
     if block_id:
         # Expand
-
-        x = Conv2D(expansion * in_channels, kernel_size=1, padding='same',
-                   use_bias=False, activation=None,
-                   name=prefix + 'expand')(x)
-        x = BatchNormalization(epsilon=1e-3, momentum=0.999,
-                               name=prefix + 'expand_BN')(x)
+        x = Conv2D(expansion * in_channels, kernel_size=1, padding='same', use_bias=False, activation=None, name=prefix + 'expand')(x)
+        x = BatchNormalization(epsilon=1e-3, momentum=0.999, name=prefix + 'expand_BN')(x)
         x = Activation(relu6, name=prefix + 'expand_relu')(x)
     else:
         prefix = 'expanded_conv_'
     # Depthwise
-    x = DepthwiseConv2D(kernel_size=3, strides=stride, activation=None,
-                        use_bias=False, padding='same', dilation_rate=(rate, rate),
-                        name=prefix + 'depthwise')(x)
-    x = BatchNormalization(epsilon=1e-3, momentum=0.999,
-                           name=prefix + 'depthwise_BN')(x)
-
+    x = DepthwiseConv2D(kernel_size=3, strides=stride, activation=None, use_bias=False, padding='same', dilation_rate=(rate, rate), name=prefix + 'depthwise')(x)
+    x = BatchNormalization(epsilon=1e-3, momentum=0.999, name=prefix + 'depthwise_BN')(x)
     x = Activation(relu6, name=prefix + 'depthwise_relu')(x)
 
     # Project
-    x = Conv2D(pointwise_filters,
-               kernel_size=1, padding='same', use_bias=False, activation=None,
-               name=prefix + 'project')(x)
-    x = BatchNormalization(epsilon=1e-3, momentum=0.999,
-                           name=prefix + 'project_BN')(x)
+    x = Conv2D(pointwise_filters, kernel_size=1, padding='same', use_bias=False, activation=None, name=prefix + 'project')(x)
+    x = BatchNormalization(epsilon=1e-3, momentum=0.999, name=prefix + 'project_BN')(x)
 
     if skip_connection:
         return Add(name=prefix + 'add')([inputs, x])

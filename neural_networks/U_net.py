@@ -21,48 +21,78 @@ from keras.layers import Input, BatchNormalization, Activation, Dropout
 from keras.layers.convolutional import Conv2D, Conv2DTranspose, UpSampling2D, ZeroPadding2D, Cropping2D
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.merge import Concatenate
-# from keras.layers.noise import GaussianDropout, AlphaDropout  : Not supported in coremltools, Mar 18, 2019
 from keras.layers.advanced_activations import LeakyReLU, PReLU, ELU
 from keras.initializers import Constant
-
 from keras import backend as K
 
 
 
 
-def Model_Name():
-    return 'U-net'
+####################################################################################################
+####    Descriptions and definitions
+####################################################################################################
+
+def Model_Name(): return 'U-net'
 
 
+def Model_Description(): return 'U-net implementation for A.I.Segmentation\n\
+                            Revised from the following original.\n\
+                            - Original codes -\n\
+                            URL: https://github.com/chuckyee/cardiac-segmentation\n\
+                            URL: https://blog.insightdatascience.com/heart-disease-diagnosis-with-deep-learning-c2d92c27e730\n\
+                            - Original copyrights -\n\
+                            Copyright (c) 2017 chuckyee\n\
+                            Released under the MIT license\n\
+                            URL: https://github.com/chuckyee/cardiac-segmentation/blob/master/LICENSE'
 
 
-def Model_Description():
-    return 'U-net implementation for A.I.Segmentation\n\
-            Revised from the following original.\n\
-            - Original codes -\n\
-            URL: https://github.com/chuckyee/cardiac-segmentation\n\
-            URL: https://blog.insightdatascience.com/heart-disease-diagnosis-with-deep-learning-c2d92c27e730\n\
-            - Original copyrights -\n\
-            Copyright (c) 2017 chuckyee\n\
-            Released under the MIT license\n\
-            URL: https://github.com/chuckyee/cardiac-segmentation/blob/master/LICENSE'
+'''
+    Dictionary of custom layers used in the following Build_Model().
+    This will be used for conversion to CoreML model.
+    Use the same name for keys and values in this dictionary.
 
-
-
-
-def ActivationBy(activation='relu', alpha=0.2):
+    If you use custom layers, "return { 'custom_layer1_name': custom_layer1_def, 'custom_layer2_name': custom_layer2_def, ... }".
     
-    if activation == 'leakyrelu':
-        return LeakyReLU(alpha=alpha)
+    If you do not use custom layers, just "return {}".
+'''
+def Custom_Layers(): return {}
 
-    elif activation == 'prelu':
-        return PReLU(alpha_initializer=Constant(alpha), shared_axes=[1, 2])
 
-    elif activation == 'elu':
-        return ELU(alpha=alpha)
+'''
+    Define a batch size used for training.
+'''
+def Batch_Size(): return 8
 
-    else:
-        return Activation(activation)
+
+'''
+    Define learning rates at the points of epochs : [[epoch, learning rate], ...].
+    Learning rates between epochs will be interpolated linearly.
+    The epoch value in the last component of this list is the total epoch number when training finishes.
+'''
+# def Learning_Rate_Lsit(): return [[0,3e-3], [2,3e-3]]   # TEST
+# def Learning_Rate_Lsit(): return [[0,3e-3], [20,3e-3], [50,2e-3], [80,5e-4]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
+def Learning_Rate_Lsit(): return [[0, 5e-3], [5, 1.5e-2], [10, 1.5e-2], [20, 1e-2], [30, 7.5e-3], [50, 5e-3]]
+# def Learning_Rate_Lsit(): return [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]
+
+
+'''
+    Activation layers.
+'''
+# def ActivationBy(activation='relu', alpha=0.2):
+    
+#     if activation == 'leakyrelu':
+#         return LeakyReLU(alpha=alpha)
+
+#     elif activation == 'prelu':
+#         return PReLU(alpha_initializer=Constant(alpha), shared_axes=[1, 2])
+
+#     elif activation == 'elu':
+#         return ELU(alpha=alpha)
+
+#     else:
+#         return Activation(activation)
 
 
 

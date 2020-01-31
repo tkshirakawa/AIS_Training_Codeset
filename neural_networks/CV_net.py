@@ -22,26 +22,39 @@ from keras.layers import Input, Activation, Dropout
 from keras.layers.convolutional import Conv2D, DepthwiseConv2D, Conv2DTranspose, UpSampling2D, Cropping2D, ZeroPadding2D
 from keras.layers.pooling import MaxPooling2D, AveragePooling2D
 from keras.layers.merge import Concatenate, Maximum, Average, Add, Multiply
-# from keras.layers.noise import GaussianDropout, AlphaDropout  : Not supported in coremltools, Mar 18, 2019
 from keras.layers.advanced_activations import LeakyReLU, PReLU, ELU
 from keras.initializers import Constant
 
-# Trial for 16-bit float calculation
-from keras.layers import BatchNormalization as BNLayer
-# from F16_func.BNF16 import BatchNormalizationF16 as BNLayer
 
 
 
 def Model_Name():
     return 'CV-net'
 
-
-
 def Model_Description():
     return         'Neural network model for A.I.Segmentation\n\
                     Constructed for segmentation of cardiovascular CT images\n\
                     Copyright (c) 2019-2020, Takashi Shirakawa\n\
                     URL: https://compositecreatures.jimdofree.com/a-i-segmentation/'
+
+
+
+
+# Added for AIS, Takashi Shirakawa, Dec, 2019
+# Dictionary of custom layers used in the following Build_Model() for conversion to CoreML model
+# Use the same name for keys and values of the following dictionary
+def Custom_Layers():
+    return {}
+
+
+def Batch_Size():
+    return 16
+
+
+# Define a learning rate at a point of epoch : [[epoch, learning rate], ...]
+def Learning_Rate_Lsit():
+    return [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]
+
 
 
 
@@ -71,7 +84,7 @@ def Build_Model():
     # C1
     c1 = Conv2D(filters=16, kernel_size=(7, 7), padding='same', kernel_initializer='he_uniform')(inputs)
     c1 = DepthwiseConv2D(kernel_size=(3, 3), padding='same', depthwise_initializer='he_normal', use_bias=False)(c1)
-    c1 = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(c1)
+    c1 = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(c1)
     c1 = ActivationBy('prelu', alpha=0.2)(c1)
     #c1 = ActivationBy('leakyrelu', alpha=0.1)(c1)
 
@@ -79,14 +92,14 @@ def Build_Model():
     # C2
     c2 = Conv2D(filters=64, kernel_size=(24, 24), padding='valid', kernel_initializer='he_uniform')(c1)
     c2 = DepthwiseConv2D(kernel_size=(5, 5), padding='valid', depthwise_initializer='he_normal', use_bias=False)(c2)
-    c2 = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(c2)
+    c2 = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(c2)
     c2 = ActivationBy('prelu', alpha=0.1)(c2)
     c2 = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), padding='valid')(c2)
 
     # C3
     c3 = Conv2D(filters=128, kernel_size=(1, 1), padding='valid', kernel_initializer='he_uniform')(c2)
     c3 = DepthwiseConv2D(kernel_size=(3, 3), padding='valid', depthwise_initializer='he_normal', use_bias=False)(c3)
-    c3 = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(c3)
+    c3 = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(c3)
     c3 = ActivationBy('prelu', alpha=0.1)(c3)
 
 
@@ -98,13 +111,13 @@ def Build_Model():
     # C41
     c41 = Conv2D(filters=256, kernel_size=(5, 5), padding='valid', kernel_initializer='he_uniform')(avp)
     c41 = DepthwiseConv2D(kernel_size=(3, 3), padding='valid', depthwise_initializer='he_normal', use_bias=False)(c41)
-    c41 = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(c41)
+    c41 = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(c41)
     c41 = ActivationBy('prelu', alpha=0.1)(c41)
     
     # C42
     c42 = Conv2D(filters=256, kernel_size=(1, 1), padding='valid', kernel_initializer='he_uniform')(avp)
     c42 = DepthwiseConv2D(kernel_size=(7, 7), padding='valid', depthwise_initializer='he_normal', use_bias=False)(c42)
-    c42 = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(c42)
+    c42 = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(c42)
     c42 = ActivationBy('prelu', alpha=0.1)(c42)
     #c42 = ActivationBy('elu', alpha=1.0)(c42)
     
@@ -117,7 +130,7 @@ def Build_Model():
     # C43
     c43 = Conv2D(filters=256, kernel_size=(23, 23), padding='valid', kernel_initializer='he_uniform')(mxp)
     c43 = DepthwiseConv2D(kernel_size=(3, 3), padding='valid', depthwise_initializer='he_normal', use_bias=False)(c43)
-    c43 = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(c43)
+    c43 = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(c43)
     c43 = ActivationBy('relu')(c43)
     #c43 = ActivationBy('prelu', alpha=0.2)(c43)
     c43 = UpSampling2D(size=(2, 2))(c43)
@@ -132,26 +145,26 @@ def Build_Model():
 
     # D1a
     d1a = Conv2DTranspose(filters=128, kernel_size=(13, 13), padding='valid', kernel_initializer='he_uniform', use_bias=False)(c4)
-    d1a = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(d1a)
+    d1a = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(d1a)
     d1a = ActivationBy('prelu', alpha=0.1)(d1a)
     d1a = UpSampling2D(size=(2, 2))(d1a)
 
     # D2a
     d2a = Conv2DTranspose(filters=32, kernel_size=(5, 5), padding='valid', kernel_initializer='he_uniform', use_bias=False)(d1a)
-    d2a = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(d2a)
+    d2a = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(d2a)
     d2a = ActivationBy('prelu', alpha=0.1)(d2a)
     d2a = UpSampling2D(size=(2, 2))(d2a)
 
 
     # D1b
     d1b = Conv2DTranspose(filters=64, kernel_size=(5, 5), padding='valid', kernel_initializer='he_uniform', use_bias=False)(c4)
-    d1b = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(d1b)
+    d1b = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(d1b)
     d1b = ActivationBy('prelu', alpha=0.1)(d1b)
     d1b = UpSampling2D(size=(2, 2))(d1b)
     
     # D2b
     d2b = Conv2DTranspose(filters=16, kernel_size=(21, 21), padding='valid', kernel_initializer='he_uniform', use_bias=False)(d1b)
-    d2b = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(d2b)
+    d2b = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(d2b)
     d2b = ActivationBy('prelu', alpha=0.1)(d2b)
     d2b = UpSampling2D(size=(2, 2))(d2b)
 
@@ -164,7 +177,7 @@ def Build_Model():
     # O
     od = Conv2D(filters=16, kernel_size=(1, 1), padding='same', kernel_initializer='he_uniform')(d2)
     od = DepthwiseConv2D(kernel_size=(5, 5), padding='same', depthwise_initializer='he_normal', use_bias=False)(od)
-    od = BNLayer(axis=-1, momentum=0.9, epsilon=0.001)(od)
+    od = BatchNormalization(axis=-1, momentum=0.9, epsilon=0.001)(od)
     od = ActivationBy('leakyrelu', alpha=0.01)(od)
     od = Add()([od, od, od, od])
 

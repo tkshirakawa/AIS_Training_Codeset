@@ -1,5 +1,5 @@
 # AIS Training Codeset
-Source codes to create macOS CoreML models for A.I.Segmentation plugin.
+## Source codes to create macOS CoreML models for A.I.Segmentation plugin.   
 This codeset contains
 1. Preprocessing codes for image augmentation and storing in HDF5
 1. A training management code with custom loss, metrics, layers and variable learning rate

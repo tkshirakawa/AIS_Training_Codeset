@@ -3,7 +3,8 @@ Python codes to train neural network models with your original dataset for seman
 <br>
 - Library for training: **Keras with TensorFlow backend**
 - Library for prediction: **Core ML in macOS**
-- Data: **8-bit grayscale image w/o alpha channel = each pixel has just one channel of unsigned integer value (0-255)**
+- Data: **200x200 pixel size, 8-bit grayscale image w/o alpha channel**<br>
+        (That means each pixel has just one channel of unsigned integer value 0-255)
 
 Please refer to a PDF file: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.<br>
 <br>

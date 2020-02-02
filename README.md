@@ -21,15 +21,15 @@ This codeset contains
 U-net : by chuckyee, see [chuckyee/cardiac-segmentation](https://github.com/chuckyee/cardiac-segmentation)<br>
 DeepLab v3+ : by bonlime, see [bonlime/keras-deeplab-v3-plus](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
 
-*2 You need to install coremltools from Apple to use the converter. See [coremltools by Apple](https://github.com/apple/coremltools)<br>
+*2 You need to install coremltools from Apple to use the converter. See [coremltools by Apple](https://github.com/apple/coremltools).<br>
 <br>
 
 ## Training Flow
 1. Prepare your dataset: public data from web, personal data in your PC, and/or any images.
 1. Locate the dataset in directories with prearranged names. Follow the rules for dataset.
 1. Inflate the dataset by data augumentation technique.
-1. Make CSV lists of the dataset. Save separately for training and validation.
-1. Convert the dataset in the CSV lists into HDF5.
+1. Make a CSV list of the augumented dataset. Separate the list into training and validation data.
+1. Convert those datasets in CSV lists into HDF5 files.
 1. Training by Keras+TensorFlow.
 1. Convert the trained Keras model to a Core ML model for AIS in macOS.
 

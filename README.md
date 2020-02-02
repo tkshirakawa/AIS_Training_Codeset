@@ -1,5 +1,12 @@
 # AIS Training Codeset
-Source codes to create macOS CoreML models for A.I.Segmentation plugin.
+Python codes to train neural network models with your original dataset for semantic segmentation. The codeset also includes the special converter to create macOS Core ML models for A.I.Segmentation plugin for OsiriX.<br>
+<br>
+- Library for training: Keras with TensorFlow backend.
+- Library for prediction: Core ML in macOS.
+- Data: 8-bit grayscale image w/o alpha channel = each pixel has just one channel of unsigned integer value (0-255).
+
+Please refer to a PDF file: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.<br>
+<br>
 
 ## Description
 This codeset contains
@@ -14,8 +21,8 @@ U-net : by chuckyee, see [chuckyee/cardiac-segmentation](https://github.com/chuc
 DeepLab v3+ : by bonlime, see [bonlime/keras-deeplab-v3-plus](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
 
 *2 You need to install coremltools from Apple to use the converter. See [coremltools by Apple](https://github.com/apple/coremltools)<br>
+<br>
 
----
 ## Training Flow
 1. Prepare your dataset: public data from web, personal data in your PC, and/or any images.
 1. Locate the dataset in directories with prearranged names. Follow the rules for dataset.
@@ -25,7 +32,7 @@ DeepLab v3+ : by bonlime, see [bonlime/keras-deeplab-v3-plus](https://github.com
 1. Training by Keras+TensorFlow.
 1. Convert the trained Keras model to a Core ML model for AIS in macOS.
 
-Please refer to a PDF file: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.<br>
-
+More: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf)<br>
 <br>
+
 <img width="1223" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">

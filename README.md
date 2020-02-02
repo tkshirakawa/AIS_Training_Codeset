@@ -1,17 +1,17 @@
 # AIS Training Codeset
-Python codes to train neural network models with your original dataset for semantic segmentation. The codeset also includes the special converter to create macOS Core ML models for A.I.Segmentation plugin for OsiriX.<br>
+Python code to train neural network models with your original dataset for semantic segmentation. This codeset also includes a converter to create macOS Core ML models for A.I.Segmentation plugin for OsiriX.<br>
 <br>
 - Library for training: **Keras with TensorFlow backend**
 - Library for prediction: **Core ML in macOS**
-- Data: **200x200 pixel size, 8-bit grayscale image w/o alpha channel**<br>
+- Data: **8-bit grayscale image w/o alpha channel, 200x200 pixel size**<br>
         (That means each pixel has just one channel of unsigned integer value 0-255)
 
-Please refer to a PDF file: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.<br>
+Please refer to PDF: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.<br>
 <br>
 
 ## Description
-This codeset contains
-- Preprocessing codes for image augmentation, storing data in HDF5, and so on.
+This codeset contains:
+- Preprocessing code for image augmentation, etc.
 - A training management code. Variable learning rate is available.
 - Codes for custom loss, metrics and layers for advanced training.
 - Neural network models of Keras+TensorFlow: CV-net SYNAPSE, CV-net2, CV-net, U-net and DeepLab v3+ *1.

@@ -46,30 +46,27 @@ import importlib.machinery as imm
 
 _LM = imm.SourceFileLoader('Loss_and_metrics', validFuncPath).load_module()
 
-LOSS = _LM.mean_iou_MSE_loss        ### Best performance ###
+LOSS = _LM.mean_iou_MSE_loss            ### Best performance ###
 # LOSS = _LM.mean_iou_MSE2_loss
-# LOSS = _LM.mean_iou_edged_MSE_loss
-# LOSS = _LM.mean_sq_iou_MSE_loss
-# LOSS = _LM.mean_sigmoid_iou_MSE_loss
-# LOSS = _LM.mean_sigmoid_iou_edged_MSE_loss
-# LOSS = _LM.mean_iou_MAE_loss        ### Good ###
+# LOSS = _LM.mean_iou_BCE_loss
+# LOSS = _LM.mean_iou_MSE_border_MSE_loss
+# LOSS = _LM.mean_iou_MSE_border_BCE_loss
+# LOSS = _LM.mean_iou_MSE_border_KLD_loss
 # LOSS = _LM.mean_iou_SVM_loss
 # LOSS = _LM.mean_iou_SSVM_loss
 # LOSS = _LM.mean_iou_LGC_loss
-# LOSS = _LM.mean_iou_rou_MSE_loss    ### Best performance ###
-# LOSS = _LM.mean_rou    ### Best performance ###
+# LOSS = _LM.mean_iou_rou_MSE_loss        ### Best performance ###
+# LOSS = _LM.mean_rou
 # LOSS = _LM.Huber_loss
 # LOSS = _LM.mean_iou_Huber_loss
 # LOSS = _LM.mean_moliou_loss
 # LOSS = _LM.mean_moliou_MSE_loss
-# LOSS = _LM.dice_coef_loss           ### Not bad ###
-# LOSS = _LM.dice_coef_MSE_loss       ### Best performance ###
-# LOSS = _LM.dice_coef_MAE_loss       ### Good ###
+# LOSS = _LM.dice_coef_loss
+# LOSS = _LM.dice_coef_MSE_loss           ### Best performance ###
 # LOSS = _LM.dice_coef_SVM_loss
 # LOSS = _LM.dice_coef_SSVM_loss
 # LOSS = _LM.dice_coef_LGC_loss
-# LOSS = _LM.mean_squared_error_loss                ### Not good ###
-# LOSS = _LM.mean_absolute_error_loss               ### Not good ###
+# LOSS = _LM.mean_squared_error_loss      ### Not good ###
 
 def get_loss(): return {LOSS.__name__: LOSS}
 
@@ -158,6 +155,10 @@ def Train():
     LR_params['step']       = [1.0, 1.0]
     LR_params['limit']      = [0.25, 4.0]
     LR_params['patience']   = [8, 8]
+
+
+    # Patience before early stopping
+    patience_for_stop = 30
 
 
     # Epoch and other parameters
@@ -353,7 +354,7 @@ def Train():
     # Define callbacks
     print('\n- Defining callbacks...')
     checkpointer = ModelCheckpoint(tmp_model_path, monitor=LR_params['monitor_for_best'][0], verbose=1, save_best_only=True, mode=LR_params['monitor_for_best'][1])
-    # earlyStopper = EarlyStopping(monitor=LR_params['monitor_for_best'][0], min_delta=0, patience=20, verbose=1, mode=LR_params['monitor_for_best'][1])
+    earlyStopper = EarlyStopping(monitor=LR_params['monitor_for_best'][0], min_delta=0, patience=patience_for_stop, verbose=1, mode=LR_params['monitor_for_best'][1])
     myLearningCallback = MyLearningCallback()
     scheduleLR = LearningRateScheduler(CalcLearningRate, verbose=0)
     csvlogger = CSVLogger(os.path.join(work_dir_path,'training_log.csv'), separator=',', append=False)
@@ -430,7 +431,7 @@ def Train():
         epochs                  = number_of_epochs,
         verbose                 = 1,
         # callbacks               = [checkpointer, earlyStopper, myLearningCallback, scheduleLR, csvlogger, tensorboard],
-        callbacks               = [checkpointer, myLearningCallback, scheduleLR, csvlogger],
+        callbacks               = [checkpointer, earlyStopper, myLearningCallback, scheduleLR, csvlogger],
         validation_data         = validation_images.flow(),
         validation_steps        = validation_images.length() // NN_batch_size,
         max_queue_size          = 2,

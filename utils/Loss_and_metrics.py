@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import tensorflow as tf
 from keras import backend as K
-from keras.losses import mean_squared_error, mean_absolute_error, hinge, squared_hinge, logcosh
+from keras.losses import mean_squared_error, hinge, squared_hinge, logcosh, binary_crossentropy, kullback_leibler_divergence
 
 
 
@@ -54,7 +54,7 @@ def dilation(tensor, size=5): return K.pool2d(tensor, pool_size=(size,size), str
 
 def erosion(tensor, size=5): return -K.pool2d(-tensor, pool_size=(size,size), strides=(1,1), padding="same", pool_mode='max')
 
-def morphology_gradient(tensor, size=5):  return dilation(tensor, size=size) - erosion(tensor, size=size)
+def morphology_gradient(tensor, size=5): return dilation(tensor, size=size) - erosion(tensor, size=size)
 
 def sum2d(tensor): return K.sum(tensor)
     # if K.image_data_format == 'channels_first':  return K.sum(tensor, axis=[2,3])         # batch_size(N), ch(C), row(H), col(W)
@@ -72,40 +72,11 @@ mean_axis = None
 ####################################################################################################
 
 def mean_iou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
+    y_true = K.clip(y_true, K.epsilon(), 1.)        # (batch_size, row, col, ch)
     y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    intersection = sum2d(y_true * y_pred)
-    union = sum2d(y_true) + sum2d(y_pred) - intersection
+    intersection = K.sum(K.sqrt(y_true * y_pred))   # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
+    union = K.sum(y_true) + K.sum(y_pred) - intersection
     return K.mean(intersection / union, axis=mean_axis)
-
-# def mean_iou(y_true, y_pred):
-#     y_true = K.cast_to_floatx(y_true >= 0.5, tf.int32)
-#     y_pred = K.cast_to_floatx(y_pred >= 0.5, tf.int32)
-#     mean_iou, _ = tf.compat.v1.metrics.mean_iou(y_true, y_pred, num_classes=1)
-#     return  tf.reduce_mean(mean_iou)
-
-# MIOU = tf.keras.metrics.MeanIoU(num_classes=1, dtype=tf.float32)
-# def mean_iou(y_true, y_pred):
-#     y_true = K.cast_to_floatx(y_true >= 0.5, tf.int32)
-#     y_pred = K.cast_to_floatx(y_pred >= 0.5, tf.int32)
-#     MIOU.update_state(y_true, y_pred)
-#     return  MIOU.result()
-
-
-def mean_sq_iou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    intersection = sum2d(y_true * y_pred)
-    union = sum2d(y_true) + sum2d(y_pred) - intersection
-    return K.mean(K.square(intersection / union), axis=mean_axis)
-
-
-def mean_sigmoid_iou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    intersection = sum2d(y_true * y_pred)
-    union = sum2d(y_true) + sum2d(y_pred) - intersection
-    return K.mean(K.sigmoid(6.0 * (intersection / union - 0.5)), axis=mean_axis)
 
 
 def mean_iou_loss(y_true, y_pred):
@@ -119,29 +90,33 @@ def mean_iou_MSE_loss(y_true, y_pred):
 def mean_iou_MSE2_loss(y_true, y_pred):
     return 0.5 * mean_iou_loss(y_true, y_pred) + 1.5 * mean_squared_error(y_true, y_pred)
 
+
+def mean_iou_BCE_loss(y_true, y_pred):
+    return mean_iou_loss(y_true, y_pred) + binary_crossentropy(y_true, y_pred)
+
 ###
-def mean_iou_edged_MSE_loss(y_true, y_pred):
+def mean_iou_MSE_border_MSE_loss(y_true, y_pred):
+    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
+    y_pred = K.clip(y_pred, K.epsilon(), 1.)
     y_true_mol = morphology_gradient(y_true, size=11)
     y_pred_mol = morphology_gradient(y_pred, size=11)
     return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred) + mean_squared_error(y_true_mol, y_pred_mol)
 
 
-def mean_sq_iou_MSE_loss(y_true, y_pred):
-    return 1. - mean_sq_iou(y_true, y_pred) + mean_squared_error(y_true, y_pred)
-
-
-def mean_sigmoid_iou_MSE_loss(y_true, y_pred):
-    return 1. - mean_sigmoid_iou(y_true, y_pred) + mean_squared_error(y_true, y_pred)
-
-
-def mean_sigmoid_iou_edged_MSE_loss(y_true, y_pred):
+def mean_iou_MSE_border_BCE_loss(y_true, y_pred):
+    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
+    y_pred = K.clip(y_pred, K.epsilon(), 1.)
     y_true_mol = morphology_gradient(y_true, size=11)
     y_pred_mol = morphology_gradient(y_pred, size=11)
-    return mean_sigmoid_iou_MSE_loss(y_true, y_pred) + mean_squared_error(y_true_mol, y_pred_mol)
+    return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred) + binary_crossentropy(y_true_mol, y_pred_mol)
 
 
-def mean_iou_MAE_loss(y_true, y_pred):
-    return mean_iou_loss(y_true, y_pred) + mean_absolute_error(y_true, y_pred)
+def mean_iou_MSE_border_KLD_loss(y_true, y_pred):
+    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
+    y_pred = K.clip(y_pred, K.epsilon(), 1.)
+    y_true_mol = morphology_gradient(y_true, size=11)
+    y_pred_mol = morphology_gradient(y_pred, size=11)
+    return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred) + kullback_leibler_divergence(y_true_mol, y_pred_mol)
 
 
 def mean_iou_SVM_loss(y_true, y_pred):
@@ -165,13 +140,13 @@ def mean_iou_LGC_loss(y_true, y_pred):
 # RoU: residual over union
 # The residual is uncovered residual area in grand-truth. RoU = grand-truth - intersection
 def mean_rou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
+    y_true = K.clip(y_true, K.epsilon(), 1.)        # (batch_size, row, col, ch)
     y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    true_sum = sum2d(y_true)
-    intersection = sum2d(y_true * y_pred)
-    union = true_sum + sum2d(y_pred) - intersection
+    true_sum = K.sum(y_true)
+    intersection = K.sum(K.sqrt(y_true * y_pred))   # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
+    union = true_sum + K.sum(y_pred) - intersection
     return K.mean((true_sum - intersection) / union, axis=mean_axis)
-    # return (true_sum - intersection + smooth) / (true_sum + sum2d(y_pred) - intersection + smooth)
+    # return (true_sum - intersection + smooth) / (true_sum + K.sum(y_pred) - intersection + smooth)
 
 
 # mean_iou_rou = (mean_iou + (1 - mean_rou)) / 2    range: 0 - 1
@@ -226,10 +201,10 @@ def mean_moliou_MSE_loss(y_true, y_pred):
 ####################################################################################################
 
 def dice_coef(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
+    y_true = K.clip(y_true, K.epsilon(), 1.)        # (batch_size, row, col, ch)
     y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    numerator = 2. * sum2d(y_true * y_pred)
-    denominator = sum2d(y_true) + sum2d(y_pred)
+    numerator = 2. * K.sum(K.sqrt(y_true * y_pred)) # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
+    denominator = K.sum(y_true) + K.sum(y_pred)
     return K.mean(numerator / denominator, axis=mean_axis)
 
 
@@ -239,10 +214,6 @@ def dice_coef_loss(y_true, y_pred):
 
 def dice_coef_MSE_loss(y_true, y_pred):
     return dice_coef_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred)
-
-
-def dice_coef_MAE_loss(y_true, y_pred):
-    return dice_coef_loss(y_true, y_pred) + mean_absolute_error(y_true, y_pred)
 
 
 def dice_coef_SVM_loss(y_true, y_pred):

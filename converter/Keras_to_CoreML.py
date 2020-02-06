@@ -282,8 +282,8 @@ def convert_keras_to_mlmodel(keras_model_path, coreml_model_path):
     print('----------------------------------------------------------')
     print('Model descriptions:')
     print(spec.description)
-    print('Model descriptions (float multiarray type):')
-    print(spec_f.description)
+#    print('Model descriptions (float multiarray type):')
+#    print(spec_f.description)
 
     print('Custom layers:')
     for i, layer in enumerate(spec.neuralNetwork.layers):

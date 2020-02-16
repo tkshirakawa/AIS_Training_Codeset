@@ -1,36 +1,9 @@
 '''
-    Copyright (c) 2020, Takashi Shirakawa. All rights reserved.
+    Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
     e-mail: tkshirakawa@gmail.com
 
     Released under the BSD 3-Clause License
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
-
-
 
 
 ##### For TensorFlow v2.0 #####
@@ -41,6 +14,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import tensorflow as tf
 from keras import backend as K
 from keras.losses import mean_squared_error, hinge, squared_hinge, logcosh, binary_crossentropy, kullback_leibler_divergence
+
+
+
+
+num_classes = -1
+def set_num_classes(n=1):
+    global num_classes
+    num_classes = n
 
 
 
@@ -56,13 +37,21 @@ def erosion(tensor, size=5): return -K.pool2d(-tensor, pool_size=(size,size), st
 
 def morphology_gradient(tensor, size=5): return dilation(tensor, size=size) - erosion(tensor, size=size)
 
-def sum2d(tensor): return K.sum(tensor)
-    # if K.image_data_format == 'channels_first':  return K.sum(tensor, axis=[2,3])         # batch_size(N), ch(C), row(H), col(W)
-    # elif K.image_data_format == 'channels_last': return K.sum(tensor, axis=[1,2])         # batch_size(N), row(H), col(W), ch(C)
 
-
-mean_axis = None
-# mean_axis = -1
+def proc_tensors(y_true, y_pred):
+    if not K.is_tensor(y_pred):
+        y_pred = K.constant(y_pred)
+    # y_true = K.clip(K.cast(y_true >= 0.5, y_pred.dtype), K.epsilon(), 1.)
+    # y_pred = K.clip(K.cast(y_pred >= 0.5, y_pred.dtype), K.epsilon(), 1.)
+    y_true = K.clip(y_true, K.epsilon(), 1.)
+    y_pred = K.clip(y_pred, K.epsilon(), 1.)
+    ch = -100
+    if num_classes == 1:
+        ch = None
+    elif K.ndim(y_pred) == 4:
+        if K.image_data_format() == 'channels_first':  ch = 1       # batch_size(N), ch(C), row(H), col(W)
+        elif K.image_data_format() == 'channels_last': ch = -1      # batch_size(N), row(H), col(W), ch(C)
+    return y_true, y_pred, ch
 
 
 
@@ -72,21 +61,20 @@ mean_axis = None
 ####################################################################################################
 
 def mean_iou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)        # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    intersection = K.sum(K.sqrt(y_true * y_pred))   # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
-    union = K.sum(y_true) + K.sum(y_pred) - intersection
-    return K.mean(intersection / union, axis=mean_axis)
+    y_true, y_pred, ch = proc_tensors(y_true, y_pred)
+    intersection = K.sum(K.sqrt(y_true * y_pred), axis=ch)      # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
+    union = K.sum(y_true, axis=ch) + K.sum(y_pred, axis=ch) - intersection
+    return K.mean(intersection / union, axis=ch)
 
 
 def mean_iou_loss(y_true, y_pred):
     return 1. - mean_iou(y_true, y_pred)
 
-### range = 0 - 2
+
 def mean_iou_MSE_loss(y_true, y_pred):
     return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred)
 
-###
+
 def mean_iou_MSE2_loss(y_true, y_pred):
     return 0.5 * mean_iou_loss(y_true, y_pred) + 1.5 * mean_squared_error(y_true, y_pred)
 
@@ -94,26 +82,23 @@ def mean_iou_MSE2_loss(y_true, y_pred):
 def mean_iou_BCE_loss(y_true, y_pred):
     return mean_iou_loss(y_true, y_pred) + binary_crossentropy(y_true, y_pred)
 
-###
+
 def mean_iou_MSE_border_MSE_loss(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
+    y_true, y_pred, _ = proc_tensors(y_true, y_pred)
     y_true_mol = morphology_gradient(y_true, size=11)
     y_pred_mol = morphology_gradient(y_pred, size=11)
     return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred) + mean_squared_error(y_true_mol, y_pred_mol)
 
 
 def mean_iou_MSE_border_BCE_loss(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
+    y_true, y_pred, _ = proc_tensors(y_true, y_pred)
     y_true_mol = morphology_gradient(y_true, size=11)
     y_pred_mol = morphology_gradient(y_pred, size=11)
     return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred) + binary_crossentropy(y_true_mol, y_pred_mol)
 
 
 def mean_iou_MSE_border_KLD_loss(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
+    y_true, y_pred, _ = proc_tensors(y_true, y_pred)
     y_true_mol = morphology_gradient(y_true, size=11)
     y_pred_mol = morphology_gradient(y_pred, size=11)
     return mean_iou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred) + kullback_leibler_divergence(y_true_mol, y_pred_mol)
@@ -140,13 +125,11 @@ def mean_iou_LGC_loss(y_true, y_pred):
 # RoU: residual over union
 # The residual is uncovered residual area in grand-truth. RoU = grand-truth - intersection
 def mean_rou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)        # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    true_sum = K.sum(y_true)
-    intersection = K.sum(K.sqrt(y_true * y_pred))   # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
-    union = true_sum + K.sum(y_pred) - intersection
-    return K.mean((true_sum - intersection) / union, axis=mean_axis)
-    # return (true_sum - intersection + smooth) / (true_sum + K.sum(y_pred) - intersection + smooth)
+    y_true, y_pred, ch = proc_tensors(y_true, y_pred)
+    true_sum = K.sum(y_true, axis=ch)
+    intersection = K.sum(K.sqrt(y_true * y_pred), axis=ch)      # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
+    union = true_sum + K.sum(y_pred, axis=ch) - intersection
+    return K.mean((true_sum - intersection) / union, axis=ch)
 
 
 # mean_iou_rou = (mean_iou + (1 - mean_rou)) / 2    range: 0 - 1
@@ -175,37 +158,14 @@ def mean_iou_Huber_loss(y_true, y_pred):
 
 
 ####################################################################################################
-######      IoU of/with morphology gradient
-####################################################################################################
-
-def mean_moliou(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)       # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    y_true_mol = morphology_gradient(y_true, size=11)
-    y_pred_mol = morphology_gradient(y_pred, size=11)
-    return mean_iou(y_true_mol, y_pred_mol)
-
-
-def mean_moliou_loss(y_true, y_pred):
-    return 1. - mean_moliou(y_true, y_pred)
-
-
-def mean_moliou_MSE_loss(y_true, y_pred):
-    return mean_moliou_loss(y_true, y_pred) + mean_squared_error(y_true, y_pred)
-
-
-
-
-####################################################################################################
 ######      Dice
 ####################################################################################################
 
 def dice_coef(y_true, y_pred):
-    y_true = K.clip(y_true, K.epsilon(), 1.)        # (batch_size, row, col, ch)
-    y_pred = K.clip(y_pred, K.epsilon(), 1.)
-    numerator = 2. * K.sum(K.sqrt(y_true * y_pred)) # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
-    denominator = K.sum(y_true) + K.sum(y_pred)
-    return K.mean(numerator / denominator, axis=mean_axis)
+    y_true, y_pred, ch = proc_tensors(y_true, y_pred)
+    numerator = 2. * K.sum(K.sqrt(y_true * y_pred), axis=ch)        # y_XXXX is a kind of 'area'. So, the multiplied value should be reverted to its root.
+    denominator = K.sum(y_true, axis=ch) + K.sum(y_pred, axis=ch)
+    return K.mean(numerator / denominator, axis=ch)
 
 
 def dice_coef_loss(y_true, y_pred):
@@ -226,5 +186,6 @@ def dice_coef_SSVM_loss(y_true, y_pred):
 
 def dice_coef_LGC_loss(y_true, y_pred):
     return dice_coef_loss(y_true, y_pred) + logcosh(y_true, y_pred)
+
 
 

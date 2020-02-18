@@ -1,17 +1,8 @@
 '''
     Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
     e-mail: tkshirakawa@gmail.com
-    
-    
-    Released under the BSD license.
-    URL: https://opensource.org/licenses/BSD-2-Clause
-    
-    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-    
-    1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+    Released under the BSD 3-Clause License
 '''
 
 
@@ -35,27 +26,19 @@ if sys.argv[1] == '-h':
 
 
 
-def ReadImage_and_CreateH5(csvfile, dataname, shuffle=True):
+def ReadImage_and_CreateH5(paths, dataname, shuffle=True):
 
-    if csvfile == 'none':
+    if paths is None:
         return
 
-    with open(csvfile, 'r', newline='', encoding='utf-8_sig') as f:
-        csvlength = sum(1 for line in f) - 1     # !!! First row is a header, skip !!!
+    csvlength = len(paths)
 
     print(' ')
     print('Data name : {0}'.format(dataname))
-    print('Path      : {0}'.format(csvfile))
     print('Images    : {0}'.format(csvlength))
 
-    # Open the CSV file
-    with open(csvfile, 'r', newline='', encoding='utf-8_sig') as f:
-        reader = csv.reader(f)
-        next(reader)                                # !!! First row is a header, skip !!!
-        paths = [row for row in reader]
 
-
-    # Store image data as 'uint8' to save memory consumption
+    # Store image data as 'uint8'
     XX = np.empty((csvlength, 200, 200, 1), dtype=np.uint8)
     YY = np.empty((csvlength, 200, 200, 1), dtype=np.uint8)
     index = np.arange(csvlength)        # [0,1,2, ...]
@@ -105,9 +88,64 @@ def ReadImage_and_CreateH5(csvfile, dataname, shuffle=True):
 
 
 
+def Get_CSV_Paths(csvfile):
+
+    if csvfile == 'none':
+        return None
+
+    # Open the CSV file
+    with open(csvfile, 'r', newline='', encoding='utf-8_sig') as f:
+        reader = csv.reader(f)
+        next(reader)                                # !!! First row is a header, skip !!!
+        paths = [row for row in reader]
+
+    return paths
+
+
+
+
+def Check_Duplication(list1, list2):
+
+    if list1 is None or list2 is None:
+        return
+
+    import itertools
+
+    tp = list(itertools.chain.from_iterable(training_paths))
+    vp = list(itertools.chain.from_iterable(validation_paths))
+    dup = list(set(tp) & set(vp))
+
+    if len(dup) > 0:
+        print('ERROR!!! Duplicated path(s) found in training and validation datasets !!!')
+        print('Counts : {}'.format(len(dup)))
+        for p in dup: print(p)
+        sys.exit()
+    else:
+        print('Good! No duplicated path(s) found in training and validation datasets.')
+
+
+
+
 # Read images and create h5 dataset files for training and validation
 ##########################################################################
 
-ReadImage_and_CreateH5(sys.argv[1], 'image_training', shuffle=True)
-ReadImage_and_CreateH5(sys.argv[2], 'image_validation', shuffle=True)
+print(' ')
+print('Read images from CSV list and create h5 dataset for training and validation.')
+print('Training CSV   : {0}'.format(sys.argv[1]))
+print('Validation CSV : {0}'.format(sys.argv[2]))
+print(' ')
+
+
+training_paths   = Get_CSV_Paths(sys.argv[1])
+validation_paths = Get_CSV_Paths(sys.argv[2])
+
+
+print('Checking data duplication...')
+Check_Duplication(training_paths, validation_paths)
+
+
+ReadImage_and_CreateH5(training_paths, 'image_training', shuffle=True)
+ReadImage_and_CreateH5(validation_paths, 'image_validation', shuffle=True)
+
+
 

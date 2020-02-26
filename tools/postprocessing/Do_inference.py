@@ -23,6 +23,8 @@ if sys.argv[1] == '-h':
     print('  argv[3] : Image file type, .jpg or .png')
     print('  argv[4] : Path to a directory to save predicted images in it')
     print('  argv[5] : Threshold ratio to make predicted images black-and-white')
+    print('  argv[6] : Path to a Keras model code (.py) used for the training.')
+    print('  argv[7] : Path to Train.py used for the training.')
     print('  Input images must be 200x200 gray-scale without alpha values')
     sys.exit()
 
@@ -33,6 +35,7 @@ import cv2
 import numpy as np
 import glob
 from keras.models import load_model
+import importlib.machinery as imm
 
 
 if platform.system() == 'Darwin':
@@ -56,8 +59,19 @@ for i in range(nImgX):
     imgNames.append(os.path.basename(pathX[i]))
 
 
+sys.path.append(os.path.dirname(sys.argv[7]))
+
+NN = imm.SourceFileLoader('Keras_model_py', sys.argv[6]).load_module()
+try:    custom_layers = NN.Custom_Layers()
+except: custom_layers = {}      # Empty
+
+Train_py = imm.SourceFileLoader('Train_py', sys.argv[7]).load_module()
+custom_loss = Train_py.get_loss()
+custom_metrics = Train_py.get_metrics()
+
+
 # Predictionn
-model = load_model(sys.argv[1], compile=False)
+model = load_model(sys.argv[1], custom_objects=dict(**custom_loss, **custom_metrics, **custom_layers), compile=False)
 model.summary()
 imgY = model.predict(imgX, batch_size=16, verbose=1, steps=None)   # X = HEIGHT x WIDTH x CHANNEL
 

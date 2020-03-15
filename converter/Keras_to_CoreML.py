@@ -6,8 +6,6 @@
 '''
 
 
-
-
 import sys
 import os
 import warnings
@@ -91,6 +89,29 @@ def add_activation(self, name, non_linearity, input_name, output_name, params=No
 '''
 
 
+# Swish converter
+className_Swish = 'Swish'
+def convert_Swish(keras_layer):
+    coreml_layer = NeuralNetwork_pb2.CustomLayerParams()
+    coreml_layer.className = className_Swish
+    coreml_layer.description = 'Custom activation layer: ' + className_Swish
+    return coreml_layer
+
+
+# ParametricSwish converter
+className_ParametricSwish = 'ParametricSwish'
+def convert_ParametricSwish(keras_layer):
+    coreml_layer = NeuralNetwork_pb2.CustomLayerParams()
+    coreml_layer.className = className_ParametricSwish
+    coreml_layer.description = 'Custom activation layer: ' + className_ParametricSwish
+
+    weightList = keras_layer.get_weights()
+    p_alpha = weightList[0]     # numpy array
+    alpha = coreml_layer.weights.add()
+    alpha.floatValue.extend(map(float, p_alpha.flatten()))
+
+    return coreml_layer
+
 
 # GELU converter
 className_GELU = 'GELU'
@@ -101,12 +122,18 @@ def convert_GELU(keras_layer):
     return coreml_layer
 
 
-# Swish converter
-className_Swish = 'Swish'
-def convert_Swish(keras_layer):
+# FullSizePReLU converter
+className_FullSizePReLU = 'FullSizePReLU'
+def convert_FullSizePReLU(keras_layer):
     coreml_layer = NeuralNetwork_pb2.CustomLayerParams()
-    coreml_layer.className = className_Swish
-    coreml_layer.description = 'Custom activation layer: ' + className_Swish
+    coreml_layer.className = className_FullSizePReLU
+    coreml_layer.description = 'Custom activation layer: ' + className_FullSizePReLU
+
+    weightList = keras_layer.get_weights()
+    p_alpha = weightList[0]     # numpy array
+    alpha = coreml_layer.weights.add()
+    alpha.floatValue.extend(map(float, p_alpha.flatten()))
+
     return coreml_layer
 
 
@@ -130,8 +157,10 @@ def convert_SQRT(keras_layer):
 
 # Dictionary of Keras custom layers implemented in A.I.Segmentation
 conversion_func_in_AIAS = { className_SynapticTransmissionRegulator : convert_SynapticTransmissionRegulator,
-                                                     className_GELU : convert_GELU,
                                                     className_Swish : convert_Swish,
+                                          className_ParametricSwish : convert_ParametricSwish,
+                                                     className_GELU : convert_GELU,
+                                            className_FullSizePReLU : convert_FullSizePReLU,
                                                    className_Square : convert_Square,
                                                      className_SQRT : convert_SQRT }
 

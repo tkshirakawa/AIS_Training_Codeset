@@ -363,7 +363,6 @@ def Train():
     print('Patience for LR step    : {0}'.format(LR_params['patience']))
     print('__________________________________________________________________________________________________')
     if len(NN_info) > 0:
-        print('The following parameters are NOT defined in the neural network model file:')
         for info in NN_info: print(info)
         print('__________________________________________________________________________________________________')
 
@@ -464,9 +463,8 @@ def Train():
         path_file.write('Learning rate graph     : {0}\n'.format(LR_params['graph']))
         path_file.write('LR step                 : {0}\n'.format(LR_params['step']))
         path_file.write('LR limit                : {0}\n'.format(LR_params['limit']))
-        path_file.write('Patience for LR step    : {0}\n'.format(LR_params['patience']))
+        path_file.write('Patience for LR step    : {0}\n\n'.format(LR_params['patience']))
         if len(NN_info) > 0:
-            path_file.write('\nThe following parameters are NOT defined in the neural network model file:\n')
             for info in NN_info: path_file.write('{}\n'.format(info))
         path_file.write('\n')
         model.summary(print_fn=lambda x: path_file.write(x + '\n'))

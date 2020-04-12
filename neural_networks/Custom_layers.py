@@ -15,8 +15,10 @@
 
 from keras import backend as K
 from keras.layers import Layer
-from keras.initializers import Constant, Ones
+from keras.initializers import Constant, Ones, RandomUniform, TruncatedNormal, he_normal
+from keras.constraints import NonNeg
 from keras.engine.base_layer import InputSpec
+import math
 
 
 
@@ -54,15 +56,20 @@ class ParametricSwish(Layer):
         self.supports_masking = True
 
     def build(self, input_shape):
+        stddev = 0.0
+        if K.image_data_format() == 'channels_first':  stddev = math.sqrt(1.0 / max(float(input_shape[1]), 32.0))
+        elif K.image_data_format() == 'channels_last': stddev = math.sqrt(1.0 / max(float(input_shape[-1]), 32.0))
         self.alpha = self.add_weight(name        = 'alpha',
                                      shape       = list(input_shape[1:]),
-                                     initializer = Ones(),
-                                     trainable   = True)
+                                     initializer = RandomUniform(minval=1.0-stddev, maxval=1.0+stddev),
+                                     trainable   = True,
+                                     constraint  = NonNeg() )
         self.input_spec = InputSpec(ndim=len(input_shape))
         super(ParametricSwish, self).build(input_shape)
 
     def call(self, x):
-        return K.sigmoid(self.alpha * x) * x
+        beta = 1.5 - 0.5 ** self.alpha
+        return K.sigmoid(beta * x) * x
 
     def compute_output_shape(self, input_shape):
         return input_shape
@@ -84,7 +91,7 @@ class FullSizePReLU(Layer):
     def build(self, input_shape):
         self.alpha = self.add_weight(name        = 'alpha',
                                      shape       = list(input_shape[1:]),
-                                     initializer = Constant(value=0.2),
+                                     initializer = TruncatedNormal(mean=0.2, stddev=0.02),
                                      trainable   = True)
         self.input_spec = InputSpec(ndim=len(input_shape))
         super(FullSizePReLU, self).build(input_shape)

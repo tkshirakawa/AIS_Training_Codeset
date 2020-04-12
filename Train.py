@@ -201,7 +201,7 @@ def Train():
     # Batch size
     # 16 for CV_net/CV\net2, 8 for U_net and Deeplab_v3_plus
     try:    NN_batch_size    = NN.Batch_Size()
-    except: NN_batch_size, _ = 16, NN_info.append('NOTE: The batch size was not defined in the neural network model file, automatically set to 16.')
+    except: NN_batch_size, _ = 32, NN_info.append('NOTE: The batch size was not defined in the neural network model file, automatically set to 32.')
 
 
     # Define learning rates
@@ -229,7 +229,7 @@ def Train():
 
     # Patience before early stopping
     try:    patience_for_stop    = NN.Count_before_Stop()
-    except: patience_for_stop, _ = 25, \
+    except: patience_for_stop, _ = 20, \
                 NN_info.append('ALERT: The count for EarlyStopping() was not defined in the neural network model file, automatically set to 25.')
 
 
@@ -277,7 +277,8 @@ def Train():
         model = load_model(trained_model_path, custom_objects=dict(**custom_loss, **custom_metrics, **custom_layers), compile=False)
     elif sys.argv[5] == '2':
         model = NN.Build_Model()
-        model.load_weights(trained_model_path)
+        model.load_weights(trained_model_path, by_name=True)
+        # model.load_weights(trained_model_path, by_name=False)
     else:
         print('Invalid mode.')
         sys.exit()
@@ -296,9 +297,10 @@ def Train():
         sys.exit()
 
     try:    optimizer    = NN.Optimizer(base_lr=base_lr)
-    except: optimizer, _ = Adam(lr=base_lr, beta_1=0.9, beta_2=0.999, amsgrad=False), \
-                NN_info.append('ALERT: The optimizer was not defined in the neural network model file, automatically set to Adam.')
+    except: optimizer, _ = Nadam(lr=base_lr, beta_1=0.9, beta_2=0.999), \
+                NN_info.append('ALERT: The optimizer was not defined in the neural network model file, automatically set to Nadam.')
     # except: optimizer, _ = SGD(lr=base_lr, momentum=0.9, nesterov=True), \
+    # except: optimizer, _ = Adam(lr=base_lr, beta_1=0.9, beta_2=0.999, amsgrad=False), \
     # except: optimizer, _ = Nadam(lr=base_lr, beta_1=0.9, beta_2=0.999), \
     # except: optimizer, _ = AdaBound1(lr=base_lr, final_lr=0.5, beta_1=0.9, beta_2=0.999, gamma=1e-3, amsbound=False, weight_decay=0.0), \
     # except: optimizer, _ = AdaBound2(lr=base_lr, beta_1=0.9, beta_2=0.999, terminal_bound=0.5, lower_bound=0.0, upper_bound=None), \
@@ -503,7 +505,7 @@ def Train():
     #     verbose                 = 1,
     #     # callbacks               = [checkpointer, earlyStopper, autoLR, scheduleLR, csvlogger, tensorboard],
     #     callbacks               = [checkpointer, earlyStopper, autoLR, scheduleLR, csvlogger],
-    # 	validation_data         = validation_images.getdata(),  # tuple of Numpy arrays
+    #     validation_data         = validation_images.getdata(),  # tuple of Numpy arrays
     #     shuffle                 = False,
     #     initial_epoch           = init_epoch,
     #     validation_freq         = 1,

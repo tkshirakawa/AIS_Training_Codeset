@@ -10,14 +10,15 @@
 # import tensorflow as tf
 # from tensorflow.keras import backend as K
 # from tensorflow.keras.layers import Layer
-# from tensorflow.keras.initializers import Constant, Ones
+# from tensorflow.keras.initializers import Constant, Ones, TruncatedNormal, RandomUniform
 # from tensorflow.keras.engine.base_layer import InputSpec
 
 from keras import backend as K
 from keras.layers import Layer
-from keras.initializers import Constant, Ones, RandomUniform, TruncatedNormal, he_normal
+from keras.initializers import Constant, Ones, TruncatedNormal, RandomUniform
 from keras.constraints import NonNeg
 from keras.engine.base_layer import InputSpec
+
 import math
 
 
@@ -55,13 +56,15 @@ class ParametricSwish(Layer):
         super(ParametricSwish, self).__init__(**kwargs)
         self.supports_masking = True
 
+    # input_shape = batch_size(N), ch(C), row(H), col(W) or batch_size(N), row(H), col(W), ch(C)
     def build(self, input_shape):
         stddev = 0.0
-        if K.image_data_format() == 'channels_first':  stddev = math.sqrt(1.0 / max(float(input_shape[1]), 32.0))
-        elif K.image_data_format() == 'channels_last': stddev = math.sqrt(1.0 / max(float(input_shape[-1]), 32.0))
+        if K.image_data_format() == 'channels_first':  stddev = math.sqrt(2.0 / max(float(input_shape[1]), 32.0))
+        elif K.image_data_format() == 'channels_last': stddev = math.sqrt(2.0 / max(float(input_shape[-1]), 32.0))
         self.alpha = self.add_weight(name        = 'alpha',
                                      shape       = list(input_shape[1:]),
-                                     initializer = RandomUniform(minval=1.0-stddev, maxval=1.0+stddev),
+                                     initializer = TruncatedNormal(mean=1.0, stddev=stddev),
+                                    #  initializer = RandomUniform(minval=1.0-stddev, maxval=1.0+stddev),
                                      trainable   = True,
                                      constraint  = NonNeg() )
         self.input_spec = InputSpec(ndim=len(input_shape))
@@ -88,10 +91,15 @@ class FullSizePReLU(Layer):
         super(FullSizePReLU, self).__init__(**kwargs)
         self.supports_masking = True
 
+    # input_shape = batch_size(N), ch(C), row(H), col(W) or batch_size(N), row(H), col(W), ch(C)
     def build(self, input_shape):
+        stddev = 0.0
+        if K.image_data_format() == 'channels_first':  stddev = math.sqrt(2.0 / max(float(input_shape[1]), 32.0))
+        elif K.image_data_format() == 'channels_last': stddev = math.sqrt(2.0 / max(float(input_shape[-1]), 32.0))
         self.alpha = self.add_weight(name        = 'alpha',
                                      shape       = list(input_shape[1:]),
-                                     initializer = TruncatedNormal(mean=0.2, stddev=0.02),
+                                     initializer = TruncatedNormal(mean=0.2, stddev=stddev),
+                                    #  initializer = RandomUniform(minval=0.2-stddev, maxval=0.2+stddev),
                                      trainable   = True)
         self.input_spec = InputSpec(ndim=len(input_shape))
         super(FullSizePReLU, self).build(input_shape)
@@ -101,73 +109,6 @@ class FullSizePReLU(Layer):
 
     def compute_output_shape(self, input_shape):
         return input_shape
-
-
-
-
-'''
-    Custom layer to calculates multiplying shift of input tensor.
-    Note: keras.layers.Lambda() for a custom layer is NOT supported in Apple's coremltools for conversion to CoreML model.
-'''
-class MultiplyShift(Layer):
-
-    def __init__(self, weight_init=1.0, **kwargs):
-        super(MultiplyShift, self).__init__(**kwargs)
-        self.weight_init = weight_init
-        self.supports_masking = True
-
-    def build(self, input_shape):
-        self.weight = self.add_weight(name        = 'weight',
-                                      shape       = list(input_shape[1:]),
-                                      initializer = Constant(value=self.weight_init),
-                                      trainable   = True)
-        self.input_spec = InputSpec(ndim=len(input_shape))
-        super(MultiplyShift, self).build(input_shape)
-
-    def call(self, x):
-        return self.weight * x
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
-
-    def get_config(self):
-        config = {'weight_init': self.weight_init}
-        base_config = super(MultiplyShift, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
-
-
-
-
-'''
-    Custom layer to calculates learnable K.sigmoid of input tensor.
-    Note: keras.layers.Lambda() for a custom layer is NOT supported in Apple's coremltools for conversion to CoreML model.
-'''
-class SigmoidShift(Layer):
-
-    def __init__(self, alpha_init=1.0, translate_x=0.0, **kwargs):
-        super(SigmoidShift, self).__init__(**kwargs)
-        self.alpha_init = alpha_init
-        self.translate_x = translate_x
-        self.supports_masking = True
-
-    def build(self, input_shape):
-        self.alpha = self.add_weight(name         = 'alpha',
-                                     shape        = list(input_shape[1:]),
-                                     initializer  = Constant(value=self.alpha_init),
-                                     trainable    = True)
-        self.input_spec = InputSpec(ndim=len(input_shape))
-        super(SigmoidShift, self).build(input_shape)
-
-    def call(self, x):
-        return K.sigmoid(self.alpha * (x - self.translate_x))
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
-
-    def get_config(self):
-        config = {'alpha_init': self.alpha_init, 'translate_x': self.translate_x}
-        base_config = super(SigmoidShift, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
 
 
 

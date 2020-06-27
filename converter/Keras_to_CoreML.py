@@ -240,14 +240,17 @@ def convert_keras_to_mlmodel(keras_model_path, coreml_model_path):
     print('----------------------------------------------------------')
     keras_model.summary()
 
-    idp = 1
-    del_prefix = 'dropout'
-    while True:
-        try:    layer = keras_model.get_layer('{}_{}'.format(del_prefix, idp))
-        except: break
-        print('Deleting layer: {}_{}'.format(del_prefix, idp))
-        keras_model = delete_layer(model=keras_model, layer=layer, copy=False)
-        idp += 1
+    del_prefixs = ['gaussian_dropout', 'gaussian_noise', 'dropout']     # Add here to define the layer to be deleted
+
+    for del_prefix in del_prefixs:
+        idp = 1
+        while True:
+            try:    layer = keras_model.get_layer('{}_{}'.format(del_prefix, idp))
+            except: break
+            print('Deleting layer: {}_{}'.format(del_prefix, idp))
+            keras_model = delete_layer(model=keras_model, layer=layer, copy=False)
+            idp += 1
+
 
     keras_model.summary()
     print('Saving temporary Keras model: {}'.format(keras_model_path_temp))

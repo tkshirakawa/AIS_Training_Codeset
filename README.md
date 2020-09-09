@@ -56,3 +56,14 @@ This codeset contains:
 <img width="800" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">
 
 **Figure 2.** A.I.Segmentation plugin draws segmentation ROIs on DICOM images based on a selected neural network model of Core ML.
+
+<br>
+<br>
+
+## License
+Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
+e-mail: tkshirakawa@gmail.com
+
+Released under the MIT license.
+https://opensource.org/licenses/mit-license.php
+

@@ -9,7 +9,9 @@
 <br>
 
 <img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
+
 **Figure 1.** A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+
 <br>
 <br>
 
@@ -51,4 +53,5 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 <br>
 
 <img width="800" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">
+
 **Figure 2.** A.I.Segmentation plugin draws segmentation ROIs on DICOM images based on a selected neural network model of Core ML.

@@ -30,11 +30,11 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 > DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
 > [2] You need to install coremltools by Apple to use the converter - [coremltools by Apple](https://github.com/apple/coremltools)<br>
 <br>
+<img width="650" alt="training_flow" src="https://user-images.githubusercontent.com/52600509/92629460-4bc9e800-f309-11ea-8250-17afd7ccd838.png">
+<br>
 <br>
 
 ## Training Flow
-<img width="600" alt="training_flow" src="https://user-images.githubusercontent.com/52600509/92629460-4bc9e800-f309-11ea-8250-17afd7ccd838.png">
-
 1. Prepare your dataset: public data from web, personal data in your PC, and/or any images.
 1. Locate the dataset in directories with prearranged names. Follow the rules for dataset.
 1. Inflate the dataset by data augumentation technique.

@@ -62,7 +62,6 @@ This codeset contains:
 
 ## License
 Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
-e-mail: tkshirakawa@gmail.com
 
 Released under the MIT license.
 https://opensource.org/licenses/mit-license.php

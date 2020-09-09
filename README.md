@@ -7,8 +7,8 @@
 > OsiriX (https://www.osirix-viewer.com)<br>
 > Core ML (https://developer.apple.com/machine-learning/core-ml/)<br>
 
-<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
-Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png"> **Figure 1.** A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+<br>
 <br>
 
 ## Description
@@ -30,6 +30,7 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 > DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
 > [2] You need to install coremltools by Apple to use the converter - [coremltools by Apple](https://github.com/apple/coremltools)<br>
 <br>
+<br>
 
 ## Training Flow
 <img width="600" alt="training_flow" src="https://user-images.githubusercontent.com/52600509/92629460-4bc9e800-f309-11ea-8250-17afd7ccd838.png">
@@ -43,6 +44,7 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 1. Convert the trained Keras model to a Core ML model to use it in A.I.Segmentation for direct segmentation in OsiriX DICOM viewer for macOS.
 
 **Please refer to a PDF document: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**
+<br>
 <br>
 
 <img width="800" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">

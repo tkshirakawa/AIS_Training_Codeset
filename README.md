@@ -43,7 +43,7 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 1. Convert those datasets in CSV lists into HDF5 files.
 1. Training by Keras+TensorFlow.
 1. Convert the trained Keras model to a Core ML model to use it in A.I.Segmentation for direct segmentation in OsiriX DICOM viewer for macOS.
-<br>
+
 **Please refer to a PDF document: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**
 <br>
 <br>

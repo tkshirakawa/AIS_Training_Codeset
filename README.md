@@ -9,8 +9,7 @@ You can use your trained models in Python command lines as usual. Moreover, you 
 > OsiriX (https://www.osirix-viewer.com)
 > Core ML (https://developer.apple.com/machine-learning/core-ml/)
 
-<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
-Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
 
 
 ## Description

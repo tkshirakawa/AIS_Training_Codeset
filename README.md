@@ -1,5 +1,5 @@
 # AIS Training Codeset
-##### Python codes to train neural network models of Keras with your original dataset [1] for semantic segmentation.
+#### Python codes to train neural network models of Keras with your original dataset [1] for semantic segmentation.
 
 You can use your trained models in Python command lines as usual. Moreover, you can convert the models into macOS Core ML models which are loadable for A.I.Segmentation [2], a macOS GUI plugin for semantic segmentation of medical images in DICOM data.
 
@@ -8,8 +8,9 @@ You can use your trained models in Python command lines as usual. Moreover, you 
 > A.I.Segmentation (https://compositecreatures.jimdofree.com/a-i-segmentation/)
 > OsiriX (https://www.osirix-viewer.com)
 > Core ML (https://developer.apple.com/machine-learning/core-ml/)
-> <img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
-> Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+
+<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
+Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
 
 
 ## Description
@@ -33,7 +34,7 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 
 
 ## Training Flow
-<img width="1223" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/92629460-4bc9e800-f309-11ea-8250-17afd7ccd838.png">
+<img width="600" alt="training_flow" src="https://user-images.githubusercontent.com/52600509/92629460-4bc9e800-f309-11ea-8250-17afd7ccd838.png">
 
 1. Prepare your dataset: public data from web, personal data in your PC, and/or any images.
 1. Locate the dataset in directories with prearranged names. Follow the rules for dataset.
@@ -45,4 +46,4 @@ U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](ht
 
 **Please refer to a PDF document: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**
 
-<img width="1223" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">
+<img width="1000" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">

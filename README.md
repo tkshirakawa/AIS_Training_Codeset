@@ -30,7 +30,8 @@ This codeset contains:
 - A converter code to convert a trained Keras model to a Core ML model for macOS [2].
 
 > [1] Original sources of neural network models are<br>
-U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)<br>
+> **CV-net SYNAPSE: my original neural network**<br>
+> U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)<br>
 > DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
 > [2] You need to install coremltools by Apple to use the converter - [coremltools by Apple](https://github.com/apple/coremltools)<br>
 <br>

@@ -3,13 +3,14 @@
 
 You can use your trained models in Python command lines as usual. Moreover, you can convert the models into macOS Core ML models which are loadable for A.I.Segmentation [2], a macOS GUI plugin for semantic segmentation of medical images in DICOM data.
 
-> [1] A dataset is pairs of medical images and grandtruth masks (Fig.1). Images trainable in this system are squre and 8-bit grayscale w/o alpha channel. **See [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**
-> [2] A.I.Segmentation is a simple plugin of OsiriX, the most advanced DICOM viewer for macOS than ever before.
-> A.I.Segmentation (https://compositecreatures.jimdofree.com/a-i-segmentation/)
-> OsiriX (https://www.osirix-viewer.com)
-> Core ML (https://developer.apple.com/machine-learning/core-ml/)
+> [1] A dataset is pairs of medical images and grandtruth masks (Fig.1). Images trainable in this system are squre and 8-bit grayscale w/o alpha channel. **See [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**<br>
+> [2] A.I.Segmentation is a simple plugin of OsiriX, the most advanced DICOM viewer for macOS than ever before.<br>
+> A.I.Segmentation (https://compositecreatures.jimdofree.com/a-i-segmentation/)<br>
+> OsiriX (https://www.osirix-viewer.com)<br>
+> Core ML (https://developer.apple.com/machine-learning/core-ml/)<br>
 
-<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+<img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
+Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
 
 
 ## Description
@@ -26,10 +27,10 @@ This codeset contains:
 - Neural network models of Keras: CV-net SYNAPSE, U-net and DeepLab v3+ [1].
 - A converter code to convert a trained Keras model to a Core ML model for macOS [2].
 
-> [1] Original sources of neural network models are
-U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)
-> DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)
-> [2] You need to install coremltools by Apple to use the converter - [coremltools by Apple](https://github.com/apple/coremltools)
+> [1] Original sources of neural network models are<br>
+U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)<br>
+> DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
+> [2] You need to install coremltools by Apple to use the converter - [coremltools by Apple](https://github.com/apple/coremltools)<br>
 
 
 ## Training Flow

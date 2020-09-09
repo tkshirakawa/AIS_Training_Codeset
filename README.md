@@ -1,40 +1,48 @@
 # AIS Training Codeset
-Python code to train neural network models with your original dataset for semantic segmentation. This codeset also includes a converter to create macOS Core ML models for A.I.Segmentation plugin for OsiriX.<br>
-<br>
-- Library for training: **Keras with TensorFlow backend**
-- Library for prediction: **Core ML in macOS**
-- Data: **8-bit grayscale image w/o alpha channel, 200x200 pixel size**<br>
-        (That means each pixel has just one channel of unsigned integer value 0-255)
+##### Python codes to train neural network models of Keras with your original dataset [1] for semantic segmentation.
 
-Please refer to PDF: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.<br>
-<br>
+You can use your trained models in Python command lines as usual. Moreover, you can convert the models into macOS Core ML models which are loadable for A.I.Segmentation [2], a macOS GUI plugin for semantic segmentation of medical images in DICOM data.
+
+> [1] A dataset is pairs of medical images and grandtruth masks (Fig.1). Images trainable in this system are squre and 8-bit grayscale w/o alpha channel. **See [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**
+> [2] A.I.Segmentation is a simple plugin of OsiriX, the most advanced DICOM viewer for macOS than ever before.
+> A.I.Segmentation (https://compositecreatures.jimdofree.com/a-i-segmentation/)
+> OsiriX (https://www.osirix-viewer.com)
+> Core ML (https://developer.apple.com/machine-learning/core-ml/)
+> <img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
+> Figure 1. A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+
 
 ## Description
+Before you use this codeset and system, you need:
+- **GPU computer** - or cloud GPU
+- **Windows or Linux** - because TensorFlow-GPU is optimized for those OSs
+- **Python 3.7.7 / Keras 2.2.4 / TensorFlow 1.15.0** - TF 2.* is available but you may have compatibility troubles when converting the model into macOS Core ML format.
+- **Your dataset** - the most important thing is giving accurate and precise segmentation masks.
+
 This codeset contains:
-- Preprocessing code for image augmentation, etc.
-- A training management code. Variable learning rate is available.
-- Codes for custom loss, metrics and layers for advanced training.
-- Neural network models of Keras+TensorFlow: CV-net SYNAPSE, CV-net2, CV-net, U-net and DeepLab v3+ *1.
-- A converter code to convert the trained Keras model to a CoreML model for macOS *2.
+- Preprocessing codes for image augmentation, list generation of images, HDF5 archiving, etc.
+- A training management code with a learning rate controller and metrics monitor.
+- Custom loss, metrics and layers for advanced training.
+- Neural network models of Keras: CV-net SYNAPSE, U-net and DeepLab v3+ [1].
+- A converter code to convert a trained Keras model to a Core ML model for macOS [2].
 
-*1 Original sources of neural network models are<br>
-U-net : by chuckyee, see [chuckyee/cardiac-segmentation](https://github.com/chuckyee/cardiac-segmentation)<br>
-DeepLab v3+ : by bonlime, see [bonlime/keras-deeplab-v3-plus](https://github.com/bonlime/keras-deeplab-v3-plus)<br>
+> [1] Original sources of neural network models are
+U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)
+> DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)
+> [2] You need to install coremltools by Apple to use the converter - [coremltools by Apple](https://github.com/apple/coremltools)
 
-*2 You need to install coremltools from Apple to use the converter. See [coremltools by Apple](https://github.com/apple/coremltools).<br>
-<br>
 
 ## Training Flow
+<img width="1223" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/92629460-4bc9e800-f309-11ea-8250-17afd7ccd838.png">
+
 1. Prepare your dataset: public data from web, personal data in your PC, and/or any images.
 1. Locate the dataset in directories with prearranged names. Follow the rules for dataset.
 1. Inflate the dataset by data augumentation technique.
 1. Make a CSV list of the augumented dataset. Separate the list into training and validation data.
 1. Convert those datasets in CSV lists into HDF5 files.
 1. Training by Keras+TensorFlow.
-1. Convert the trained Keras model to a Core ML model for AIS in macOS.
+1. Convert the trained Keras model to a Core ML model to use it in A.I.Segmentation for direct segmentation in OsiriX DICOM viewer for macOS.
 
-More: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf)<br>
-<br>
-<br>
+**Please refer to a PDF document: [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**
 
 <img width="1223" alt="ss_v20" src="https://user-images.githubusercontent.com/52600509/71913629-3705e500-31bb-11ea-9226-3885f33f82c3.png">

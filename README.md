@@ -2,10 +2,10 @@
 Python codes to train neural network models of Keras with your original dataset [1] for semantic segmentation. You can use your trained models in Python command lines as usual. Moreover, you can convert the models into macOS Core ML models which are loadable for A.I.Segmentation [2], a macOS GUI plugin for semantic segmentation of medical images in DICOM data.
 
 > [1] A dataset is pairs of medical images and grandtruth masks (**Fig.1**). Images trainable in this system are squre and 8-bit grayscale w/o alpha channel. **See [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**  
-> [2] A.I.Segmentation is a simple plugin of OsiriX, the most advanced DICOM viewer for macOS than ever before.  
-> A.I.Segmentation (https://compositecreatures.jimdofree.com/a-i-segmentation/)  
-> OsiriX (https://www.osirix-viewer.com)  
-> Core ML (https://developer.apple.com/machine-learning/core-ml/)  
+> [2] A.I.Segmentation is a simple plugin for OsiriX.  
+> [A.I.Segmentation](https://compositecreatures.jimdofree.com/a-i-segmentation/), an OsiriX plugin that performs semantic segmentation based on Apple's Core ML technology.
+> [OsiriX](https://www.osirix-viewer.com), the most advanced DICOM viewer for macOS than ever before.  
+> [Core ML](https://developer.apple.com/machine-learning/core-ml/)  
 <br>
 
 <img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">

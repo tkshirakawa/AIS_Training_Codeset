@@ -1,20 +1,26 @@
 '''
     Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
     e-mail: tkshirakawa@gmail.com
+    
+    
+    Released under the MIT license.
+    https://opensource.org/licenses/mit-license.php
 
-    Released under the BSD 3-Clause License
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 
-##### For TensorFlow v2.0 #####
+##### For TensorFlow v2 #####
 # from __future__ import absolute_import
 # from __future__ import division
 # from __future__ import print_function
 
 
 import sys
-import os
-
 if sys.argv[1] == '-h':
     print('### Help for argv ###')
     print('  argv[1] : Path to a neural network model file (.py).')
@@ -24,10 +30,19 @@ if sys.argv[1] == '-h':
     print('  argv[5] : Training mode: 0=Normal, 1=Resume by load_model(), 2=Retrain by load_weights()')
     print('  argv[6] : Path to a model for mode 1 or 2')       # print('  argv[6] : Path to a model for Mode-1 or Mode-2')
     print('  argv[7] : Initial epoch to resume training for Mode-1')
-    print('  NOTE : Input images must be 200x200 gray-scale without alpha values')
+    print('  NOTE : Input images must be gray-scale without alpha values')
     sys.exit()
 
 
+import os
+import platform
+import numpy as np
+import importlib.machinery as imm
+# import something as ...
+
+
+if platform.system() == 'Darwin':
+    os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 # The absolute path to this file and directory
@@ -35,43 +50,36 @@ exeFilePath = os.path.abspath(__file__)
 exeDirPath = os.path.dirname(exeFilePath)
 validFuncPath = os.path.join(exeDirPath, 'utils', 'Loss_and_metrics.py')
 
-import importlib.machinery as imm
-
 
 # Define loss and metrics
-# get_loss() and get_metrics() will be used in coremltools when converting a model trained in this sequence
+# The following get_loss() and get_metrics() will be used in coremltools when converting a model trained in this sequence
+# NOTE: The metrics defined in Loss_and_metrics.py may be estimated / assumed values, NOT final results.
 
 _LM = imm.SourceFileLoader('Loss_and_metrics', validFuncPath).load_module()
 
-loss = _LM.mean_iou_MSE_loss            ### Best performance ###
-# loss = _LM.mean_iou_MSE2_loss
-# loss = _LM.mean_iou_BCE_loss
-# loss = _LM.mean_iou_MSE_border_MSE_loss
-# loss = _LM.mean_iou_MSE_border_BCE_loss
-# loss = _LM.mean_iou_MSE_border_KLD_loss
-# loss = _LM.mean_iou_SVM_loss
-# loss = _LM.mean_iou_SSVM_loss
-# loss = _LM.mean_iou_LGC_loss
-# loss = _LM.mean_iou_rou_MSE_loss        ### Best performance ###
-# loss = _LM.mean_rou
+# Select a loss function for training
+# loss = _LM.mean_squared_error_loss
 # loss = _LM.Huber_loss
-# loss = _LM.mean_iou_Huber_loss
-# loss = _LM.mean_moliou_loss
-# loss = _LM.mean_moliou_MSE_loss
-# loss = _LM.dice_coef_loss
-# loss = _LM.dice_coef_MSE_loss           ### Best performance ###
-# loss = _LM.dice_coef_SVM_loss
-# loss = _LM.dice_coef_SSVM_loss
-# loss = _LM.dice_coef_LGC_loss
-# loss = _LM.cosine_distance_loss
-# loss = _LM.mean_squared_error_loss      ### Not good ###
+# loss = _LM.LogCosh_loss
+# loss = _LM.kullback_leibler_divergence_loss
+# loss = _LM.MSE_loss_w_iou_score
+# loss = _LM.MSE_loss_w_iou_score_fpoet
+# loss = _LM.MSE_loss_w_dice_coef
+# loss = _LM.MSE_loss_w_dice_coef_fpoet
+# loss = _LM.Huber_loss_w_iou_score
+# loss = _LM.LogCosh_loss_w_iou_score
+# loss = _LM.LogCosh_loss_w_iou_score_fpoet
+loss = _LM.LogCosh_loss_w_dice_coef
+# loss = _LM.LogCosh_loss_w_dice_coef_fpoet
+# loss = _LM.KLD_loss_w_iou_score
+# loss = _LM.KLD_loss_w_dice_coef
 
 def get_loss(): return {loss.__name__: loss}
 
 # Metrics
-# NOTE: The metrics defined here must include the following LR_params['monitor_for_best'], e.g. 'mean_iou' here and 'val_mean_iou' in LR_params
-def get_metrics(): return {'mean_iou': _LM.mean_iou, 'mean_rou': _LM.mean_rou, 'dice_coef': _LM.dice_coef}
-#def get_metrics(): return {'mean_iou': _LM.mean_iou, 'mean_rou': _LM.mean_rou, 'mean_iou_rou': _LM.mean_iou_rou, 'dice_coef': _LM.dice_coef}
+# NOTE: The metrics defined here MUST include the keys 'iou_score' and 'dice_coef' for monitoring the best performance model.
+# NOTE: The metrics defined in Loss_and_metrics.py are estimated / assumed values for each batch, NOT final results.
+def get_metrics(): return {'iou_score': _LM.iou_score, 'dice_coef': _LM.dice_coef, 'rou': _LM.rou, 'fpoet': _LM.fpoet}
 
 
 
@@ -79,56 +87,135 @@ def get_metrics(): return {'mean_iou': _LM.mean_iou, 'mean_rou': _LM.mean_rou, '
 # Define a custom callback
 #####################################################################
 
+# from tensorflow.keras.callbacks import Callback     ##### For TensorFlow v2 #####
 from keras.callbacks import Callback
+
+
+# NOTE: Call this BestMetricsMonitor prior to the other callbacks to update mIoU metrics with the key 'val_iou_score' and 'val_dice_coef'.
+class BestMetricsMonitor(Callback):
+
+    def __init__(self, validation, model_base_path, nn_name, patience, **kwargs):
+        super(BestMetricsMonitor, self).__init__(**kwargs)
+        # self.val_gen = validation
+        self.val_img, gt = validation.getdata()     # Numpy array of float between 0.0 and 1.0
+        self.truth = np.clip(gt, 0.0, 1.0)          # Numpy array of float between 0.0 and 1.0, Simple clip keeps the gradient within the range
+        self.model_base_path = model_base_path
+        self.nn_name = nn_name
+        self.patience = patience
+        print('Callback: BestMetricsMonitor - Start monitoring mean IoU and Dice coef to save the best model on each epoch end...')
+
+    def on_train_begin(self, logs=None):
+        self.best_miou = -np.Inf
+        self.best_dice = -np.Inf
+        self.wait = 0
+        self.metrics_updated = False
+        self.stopped_epoch = 0
+
+    def on_epoch_end(self, epoch, logs=None):
+        print('\nCalling prediction and calculating metrics for validation data...')
+        # predc = np.where(self.model.predict_generator(self.val_gen) >= 0.5, 1, 0)
+        # predc = np.where(self.model.predict(self.val_img) >= 0.5, 1, 0)
+        t = self.truth
+        p = np.clip(self.model.predict(self.val_img), 0.0, 1.0)     # Prediction for validation data
+        u = np.clip(t + p, 0.0, 1.0)
+        truth = t.sum(axis=(-3,-2,-1))
+        predc = p.sum(axis=(-3,-2,-1))
+        union = u.sum(axis=(-3,-2,-1))
+        plane = np.where(t.max(axis=(-3,-2,-1)) >= 0.5, 1.0, 0.0)
+        count = max(plane.sum(), 1.0)
+        t_or_p = truth + predc
+        intsec = t_or_p - union
+        miou = np.sum(intsec / (union + 1e-4), axis=None) / count
+        dice = np.sum(2.0 * intsec / (t_or_p + 1e-4), axis=None) / count
+
+        # Update metrics dictionary with the key 'val_iou_score' / 'val_dice_coef'
+        try:    logs['val_iou_score'] = miou     
+        except: print('ALERT: Failed to update logs[val_iou_score].')
+        try:    logs['val_dice_coef'] = dice
+        except: print('ALERT: Failed to update logs[val_dice_coef].')
+
+        self.metrics_updated = False
+        def create_model_path(metrics_name, metrics_val):
+            return '{0}, {1}={2:.4f}, {3}.h5'.format(self.model_base_path, metrics_name, metrics_val, self.nn_name)
+
+        # Save model with the best mean IoU
+        if miou > self.best_miou:
+            print('Val. mean IoU  = {0:.5f} (updated from the value = {1:.5f})'.format(miou, self.best_miou))
+            path = create_model_path('mIoU', self.best_miou)
+            if os.path.exists(path): os.remove(path)
+            self.model.save(filepath=create_model_path('mIoU', miou), overwrite=True, include_optimizer=True)
+            self.best_miou = miou
+            self.metrics_updated = True
+        else:
+            print('Val. mean IoU  = {0:.5f} (not updated, the current best = {1:.5f})'.format(miou, self.best_miou))
+
+        # Save model with the best Dice coef
+        if dice > self.best_dice:
+            print('Val. Dice coef = {0:.5f} (updated from the value = {1:.5f})'.format(dice, self.best_dice))
+            path = create_model_path('Dice', self.best_dice)
+            if os.path.exists(path): os.remove(path)
+            self.model.save(filepath=create_model_path('Dice', dice), overwrite=True, include_optimizer=True)
+            self.best_dice = dice
+            self.metrics_updated = True
+        else:
+            print('Val. Dice coef = {0:.5f} (not updated, the current best = {1:.5f})'.format(dice, self.best_dice))
+
+        # Early stopping of myself
+        if self.metrics_updated:
+            self.wait = 0
+        else:
+            self.wait += 1
+            print('Patience count = {0} (early stop at {1} patience)'.format(self.wait, self.patience))
+            if self.wait >= self.patience:
+                self.stopped_epoch = epoch
+                self.model.stop_training = True
+                print('Epoch {0}: early stopping...'.format(self.stopped_epoch + 1))
+        print(' ')
+
+    def metrics_updated_in_Monitor(self):
+        return self.metrics_updated
+
 
 class AutoLRManager(Callback):
 
-    def __init__(self, param, early_stop, **kwargs):
+    def __init__(self, param, bm_monitor, **kwargs):
         super(AutoLRManager, self).__init__(**kwargs)
-        self.LR_decay = 1.0
         self.p = param
-        self.early_stop = early_stop
-        if self.p['monitor_for_best'][1] == 'max': self.best_val = -1e7
-        else:                                      self.best_val = 1e7
+        self.bm_monitor = bm_monitor
+        print('Callback: AutoLRManager - Start monitoring the best metrics for learning rate decay...')
+
+    def on_train_begin(self, logs=None):
+        self.LR_decay = 1.0
         self.n_good = 0
         self.n_bad = 0
 
-    def validation_monitor_improved(self, mont_val):
-        if self.p['monitor_for_best'][1] == 'max':
-            if mont_val >= self.best_val: return True
-            else:                         return False
-        else:
-            if mont_val < self.best_val:  return True
-            else:                         return False
-
     def on_epoch_end(self, epoch, logs=None):
-        mont_val = logs.get(self.p['monitor_for_best'][0])
-        print('{0} in this epoch = {1}'.format(self.p['monitor_for_best'][0], mont_val))
+        metrics_updated = self.bm_monitor.metrics_updated_in_Monitor()
+        print('Monitoring metrics for learning rate decay... [metrics: {0}]'.format('updated' if metrics_updated else 'Not updated'))
 
-        if not self.validation_monitor_improved(mont_val):
-            self.n_good = 0
-            self.n_bad += 1
-            step = self.p['step'][0]
-            print('Epochs with UN-improved result: {0} /{1} [early stop {2}]'.format(self.n_bad, self.p['patience'][0], self.early_stop))
-            if self.n_bad >= self.p['patience'][0] and step != 1.0:
-                if   step < 1.0: self.LR_decay = max(self.p['limit'][0], self.LR_decay * step)
-                elif step > 1.0: self.LR_decay = min(self.p['limit'][0], self.LR_decay * step)
-                print('LR decay is set to {0} for the next epoch (step {1}, min {2})'.format(self.LR_decay, step, self.p['limit'][0]))
-                self.n_bad = 0
-        else:
-            self.best_val = mont_val
+        if metrics_updated:
             self.n_good += 1
             self.n_bad = 0
             step = self.p['step'][1]
-            print('Epochs with improved result: {0} /{1}'.format(self.n_good, self.p['patience'][1]))
+            print('Count(s) of update = {0} (LR increased at {1} updates by x{2})'.format(self.n_good, self.p['patience'][1], step))
             if self.n_good >= self.p['patience'][1] and step != 1.0:
                 if   step < 1.0: self.LR_decay = max(self.p['limit'][1], self.LR_decay * step)
                 elif step > 1.0: self.LR_decay = min(self.p['limit'][1], self.LR_decay * step)
                 print('LR decay is set to {0} for the next epoch (step {1}, max {2})'.format(self.LR_decay, step, self.p['limit'][1]))
                 self.n_good = 0
+        else:
+            self.n_good = 0
+            self.n_bad += 1
+            step = self.p['step'][0]
+            print('Count(s) of not-update = {0} (LR decreased at {1} patiences by x{2})'.format(self.n_bad, self.p['patience'][0], step))
+            if self.n_bad >= self.p['patience'][0] and step != 1.0:
+                if   step < 1.0: self.LR_decay = max(self.p['limit'][0], self.LR_decay * step)
+                elif step > 1.0: self.LR_decay = min(self.p['limit'][0], self.LR_decay * step)
+                print('LR decay is set to {0} for the next epoch (step {1}, min {2})'.format(self.LR_decay, step, self.p['limit'][0]))
+                self.n_bad = 0
 
-        print('End of Epoch\n\n')
-    
+        print(' ')
+
     def get_LR_decay(self):
         return self.LR_decay
 
@@ -146,31 +233,37 @@ def Train():
     import matplotlib.pyplot as plt
     from datetime import datetime, timedelta, timezone
 
-    ##### For TensorFlow v2.0 #####
-    # import tensorflow as tf
+    import tensorflow as tf
+    import keras as _keras
+
+    import keras.backend as K
+    # from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, TensorBoard, LearningRateScheduler
+    from keras.callbacks import CSVLogger, LearningRateScheduler
+    from keras.utils import plot_model
+    from keras.models import load_model
+
+    ##### For TensorFlow v2 #####
     # from tensorflow import keras
     # from tensorflow.keras import backend as K
     # # from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, TensorBoard, LearningRateScheduler
-    # from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, LearningRateScheduler
+    # from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler
     # from tensorflow.keras.utils import plot_model
     # from tensorflow.keras.models import load_model
 
-    import tensorflow as tf
-    import keras.backend as K
-    # from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, TensorBoard, LearningRateScheduler
-    from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, LearningRateScheduler
-    from keras.utils import plot_model
-    from keras.models import load_model
+
+    K.clear_session()
+
+    # NOTE: Data must be (samples, height, width, channels)
+    if K.image_data_format() is not 'channels_last': K.set_image_data_format('channels_last')
 
 
     # Initial parameters for learning rate (LR)
     # Those values can be overwritten afterwards or at anytime you like
     LR_params = {'formula'          : [None, 0.0, 0],               # Learning rate formula calculates LR at points of epochs - ['poly', base_lr, number_of_epochs] is available
                  'graph'            : [[0,4e-3], [100,2e-3]],       # Learning rate graph defines LR at points of epochs - [[epoch_1, LR_1], [epoch_2, LR_2], ... [epoch_last, LR_last]]
-                 'step'             : [0.1, 2.0],                   # Multiplying values for LR decay - will be applied when monitor_for_best is [NOT improved, improved]
+                 'step'             : [0.1, 2.0],                   # Multiplying values for LR decay - will be applied when mIoU is [NOT improved, improved]
                  'limit'            : [0.01, 4.0],                  # Limitation of LR decay - when [NOT improved, improved]
-                 'patience'         : [1000, 1000],                 # Patience counts before applying step for LR decay - when [NOT improved, improved]
-                 'monitor_for_best' : ['val_mean_iou', 'max'] }     # Monitor for saving the best result
+                 'patience'         : [1000, 1000] }                # Patience counts before applying step for LR decay - when [NOT improved, improved]
 
 
     # Load loss and metrics
@@ -195,11 +288,9 @@ def Train():
     # Number of classes in the loaded neural network model
     try:    NN_num_classes    = NN.Number_of_Classes()
     except: NN_num_classes, _ = 1, NN_info.append('NOTE: The number of classes was not defined in the neural network model file, automatically set to 1.')
-    _LM.set_num_classes(NN_num_classes)
 
 
     # Batch size
-    # 16 for CV_net/CV\net2, 8 for U_net and Deeplab_v3_plus
     try:    NN_batch_size    = NN.Batch_Size()
     except: NN_batch_size, _ = 32, NN_info.append('NOTE: The batch size was not defined in the neural network model file, automatically set to 32.')
 
@@ -278,15 +369,14 @@ def Train():
     elif sys.argv[5] == '2':
         model = NN.Build_Model()
         model.load_weights(trained_model_path, by_name=True)
-        # model.load_weights(trained_model_path, by_name=False)
     else:
         print('Invalid mode.')
         sys.exit()
 
 
     # Optimizers
-    # from tensorflow.keras.optimizers import SGD, Adam, Nadam
     from keras.optimizers import SGD, Adam, Nadam
+    # from tensorflow.keras.optimizers import SGD, Adam, Nadam      ##### For TensorFlow v2 #####
     # from optimizers.AdaBound1.adabound1 import AdaBound1
     # from optimizers.AdaBound2.adabound2 import AdaBound2
     # from optimizers.Santa.Santa import Santa
@@ -319,11 +409,11 @@ def Train():
 
     # Paths and directories
     datestr = startdate.strftime("%Y%m%d%H%M%S")
-    work_dir_path  = os.path.join(sys.argv[4], 'run'+datestr+' ('+training_mode+')')
-    code_dir_path  = os.path.join(work_dir_path, 'code')
-    NN_dir_path    = os.path.join(code_dir_path, 'neural_networks')
-    utils_dir_path = os.path.join(code_dir_path, 'utils')
-    tmp_model_path = os.path.join(work_dir_path, 'tmp_model'+datestr+'.h5')
+    work_dir_path   = os.path.join(sys.argv[4], 'run'+datestr+' ('+training_mode+')')
+    code_dir_path   = os.path.join(work_dir_path, 'code')
+    NN_dir_path     = os.path.join(code_dir_path, 'neural_networks')
+    utils_dir_path  = os.path.join(code_dir_path, 'utils')
+    model_base_path = os.path.join(work_dir_path, 'model'+datestr)
 
     os.makedirs(NN_dir_path)
     os.makedirs(utils_dir_path)
@@ -338,7 +428,8 @@ def Train():
     model.summary()
     print('Date                    : {0}'.format(startdate))
     print('TensorFlow version      : {0}'.format(tf.version.VERSION))
-    print('Keras version           : {0}'.format(tf.keras.__version__))
+    print('TF-Keras version        : {0}'.format(tf.keras.__version__))
+    print('Keras version           : {0}'.format(_keras.__version__))
     print('OS-version              : {0}'.format(platform.platform()))
     print('Processor               : {0}'.format(platform.processor()))
     print('__________________________________________________________________________________________________')
@@ -353,7 +444,6 @@ def Train():
     print('Optimizer               : {0}'.format(optimizer.__class__.__name__))
     print('Loss                    : {0}'.format(loss.__name__))
     print('Metrics                 : {0}'.format(model.metrics_names[1:]))      # model.metrics_names[0] = 'loss'
-    print('Monitor for best        : {0}'.format(LR_params['monitor_for_best']))
     print('Patience for early stop : {0}'.format(patience_for_stop))
     print('Custom layers           : {0}'.format(list(custom_layers.keys()) ))
     print('Batch size              : {0}'.format(NN_batch_size))
@@ -376,10 +466,35 @@ def Train():
     #     sys.exit()
 
 
-    # Define callbacks
-    autoLR = AutoLRManager(param=LR_params, early_stop=patience_for_stop)
+    # Image data generator
+    '''
+        For TensorFlow 2.0
+        Model.fit_generator IS DEPRECATED.
+        To use Model.fit, generator classes, ImageDataGenerator_XXX(), were updated as subclasses of keras.utils.Sequence.
 
-    def LRScheduler(epoch, lr):
+        See:
+        https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit
+        https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit_generator
+    '''
+    from utils.Image_data_generator import ImageDataGenerator_CSV_with_Header, ImageDataGenerator_h5_Dataset
+    print('\n- Loading images for training...')
+    ext = os.path.splitext(sys.argv[2])[1]
+    if   ext == '.csv' :  training_images = ImageDataGenerator_CSV_with_Header('Train data from CSV', sys.argv[2], batch_size=NN_batch_size, rescale=1.0/255.0, shuffle=True)
+    elif ext == '.h5'  :  training_images = ImageDataGenerator_h5_Dataset('image_training', sys.argv[2], batch_size=NN_batch_size, rescale=1.0/255.0)
+    else               :  sys.exit()
+    print('\n- Loading images for validation...')
+    ext = os.path.splitext(sys.argv[3])[1]
+    if   ext == '.csv' :  validation_images = ImageDataGenerator_CSV_with_Header('Validation data from CSV', sys.argv[3], batch_size=NN_batch_size, rescale=1.0/255.0, shuffle=True)
+    elif ext == '.h5'  :  validation_images = ImageDataGenerator_h5_Dataset('image_validation', sys.argv[3], batch_size=NN_batch_size, rescale=1.0/255.0)
+    else               :  sys.exit()
+
+
+    # Define callbacks
+    print('\n- Defining callbacks...')
+    bm_monitor = BestMetricsMonitor(validation=validation_images, model_base_path=model_base_path, nn_name=NN_model_name, patience=patience_for_stop)
+    lr_manager = AutoLRManager(param=LR_params, bm_monitor=bm_monitor)
+
+    def ScheduleLR(epoch, lr):
         import math
         raw_lr = lr
 
@@ -400,40 +515,16 @@ def Train():
                     raw_lr = LR_at_epoch(epoch, LR_params['graph'][i], LR_params['graph'][i+1])
                     break
 
-        decay = autoLR.get_LR_decay()
+        decay = lr_manager.get_LR_decay()
         new_LR = decay * raw_lr
         print('LR = {0} (raw LR = {1}, decay = {2})'.format(new_LR, raw_lr, decay))
         return new_LR
 
-    print('\n- Defining callbacks...')
-    checkpointer = ModelCheckpoint(tmp_model_path, monitor=LR_params['monitor_for_best'][0], verbose=1, save_best_only=True, mode=LR_params['monitor_for_best'][1])
-    earlyStopper = EarlyStopping(monitor=LR_params['monitor_for_best'][0], min_delta=0, patience=patience_for_stop, verbose=1, mode=LR_params['monitor_for_best'][1])
-    scheduleLR = LearningRateScheduler(LRScheduler, verbose=0)
-    csvlogger = CSVLogger(os.path.join(work_dir_path,'training_log.csv'), separator=',', append=False)
+    # check_pointer = ModelCheckpoint(model_base_path, monitor=LR_params['monitor_for_best'][0], verbose=1, save_best_only=True, mode=LR_params['monitor_for_best'][1])
+    # early_stopper = EarlyStopping(monitor=LR_params['monitor_for_best'][0], min_delta=0, patience=patience_for_stop, verbose=1, mode=LR_params['monitor_for_best'][1])
+    lr_scheduler = LearningRateScheduler(ScheduleLR, verbose=0)
+    csv_logger = CSVLogger(os.path.join(work_dir_path,'training_log.csv'), separator=',', append=False)
     # tensorboard = TensorBoard(log_dir=work_dir_path, histogram_freq=0, write_graph=True, write_images=True)
-
-
-    # Image data generator
-    '''
-        For TensorFlow 2.0
-        Model.fit_generator IS DEPRECATED.
-        To use Model.fit, generator classes, ImageDataGenerator_XXX(), were updated as subclasses of keras.utils.Sequence.
-
-        See:
-        https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit
-        https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit_generator
-    '''
-    from utils.Image_data_generator import ImageDataGenerator_CSV_with_Header, ImageDataGenerator_h5_Dataset
-    print('\n- Loading images for training...')
-    ext = os.path.splitext(sys.argv[2])[1]
-    if   ext == '.csv' :  training_images = ImageDataGenerator_CSV_with_Header('Train data from CSV', sys.argv[2], batch_size=NN_batch_size, rescale=1.0/225.0, shuffle=True)
-    elif ext == '.h5'  :  training_images = ImageDataGenerator_h5_Dataset('image_training', sys.argv[2], batch_size=NN_batch_size, rescale=1.0/225.0)
-    else               :  sys.exit()
-    print('\n- Loading images for validation...')
-    ext = os.path.splitext(sys.argv[3])[1]
-    if   ext == '.csv' :  validation_images = ImageDataGenerator_CSV_with_Header('Validation data from CSV', sys.argv[3], batch_size=NN_batch_size, rescale=1.0/225.0, shuffle=True)
-    elif ext == '.h5'  :  validation_images = ImageDataGenerator_h5_Dataset('image_validation', sys.argv[3], batch_size=NN_batch_size, rescale=1.0/225.0)
-    else               :  sys.exit()
 
 
     # Save network figure and parameters
@@ -441,7 +532,8 @@ def Train():
     with open(os.path.join(work_dir_path,'training_parameters.txt'), mode='w') as path_file:
         path_file.write('Date                    : {0}\n'.format(startdate))
         path_file.write('TensorFlow version      : {0}\n'.format(tf.version.VERSION))
-        path_file.write('Keras version           : {0}\n'.format(tf.keras.__version__))
+        path_file.write('TF-Keras version        : {0}\n'.format(tf.keras.__version__))
+        path_file.write('Keras version           : {0}\n'.format(_keras.__version__))
         path_file.write('OS-version              : {0}\n'.format(platform.platform()))
         path_file.write('Processor               : {0}\n\n'.format(platform.processor()))
         path_file.write('Training mode           : {0}\n'.format(training_mode))
@@ -450,13 +542,12 @@ def Train():
         path_file.write('Number of classes       : {0}\n'.format(NN_num_classes))
         path_file.write('Loaded model path       : {0}\n'.format(NN_model_path))
         path_file.write('Working directory       : {0}\n\n'.format(work_dir_path))
-        path_file.write('Training images         : {0} sets in {1}\n'.format(training_images.length(), sys.argv[2]))
-        path_file.write('Validation images       : {0} sets in {1}\n\n'.format(validation_images.length(), sys.argv[3]))
+        path_file.write('Training images         : {0} sets in {1}\n'.format(training_images.datalength(), sys.argv[2]))
+        path_file.write('Validation images       : {0} sets in {1}\n\n'.format(validation_images.datalength(), sys.argv[3]))
         path_file.write('Keras data format       : {0}\n'.format(K.image_data_format()))
         path_file.write('Optimizer               : {0}\n'.format(optimizer.__class__.__name__))
         path_file.write('Loss                    : {0}\n'.format(loss.__name__))
         path_file.write('Metrics                 : {0}\n'.format(model.metrics_names[1:]))
-        path_file.write('Monitor for best        : {0}\n'.format(LR_params['monitor_for_best']))
         path_file.write('Patience for early stop : {0}\n'.format(patience_for_stop))
         path_file.write('Custom layers           : {0}\n'.format(list(custom_layers.keys()) ))
         path_file.write('Batch size              : {0}\n'.format(NN_batch_size))
@@ -484,86 +575,101 @@ def Train():
         https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit
         https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit_generator
     '''
-    print('\n- Starting model lerning...')
-    results = model.fit_generator(training_images.flow(),
-        steps_per_epoch         = training_images.length() // NN_batch_size,
+    print('\n- Starting model learning...')
+    # results = model.fit_generator(
+    #     generator               = training_images,
+    #     epochs                  = number_of_epochs,
+    #     verbose                 = 1,
+    #     callbacks               = [bm_monitor, lr_manager, lr_scheduler, csv_logger],
+    #     validation_data         = validation_images,
+    #     max_queue_size          = 10,
+    #     workers                 = 1,
+    #     use_multiprocessing     = False,
+    #     shuffle                 = False,
+    #     initial_epoch           = init_epoch )
+
+    results = model.fit_generator(
+        generator               = training_images.flow(),
+        steps_per_epoch         = training_images.datalength() // NN_batch_size,
         epochs                  = number_of_epochs,
         verbose                 = 1,
-        callbacks               = [checkpointer, earlyStopper, autoLR, scheduleLR, csvlogger],
+        callbacks               = [bm_monitor, lr_manager, lr_scheduler, csv_logger],
         validation_data         = validation_images.flow(),
-        validation_steps        = validation_images.length() // NN_batch_size,
-        max_queue_size          = 2,
+        validation_steps        = validation_images.datalength() // NN_batch_size,
+        max_queue_size          = 10,
         workers                 = 1,
         use_multiprocessing     = False,
         shuffle                 = False,
         initial_epoch           = init_epoch )
 
-    ##### For TensorFlow v2.0 #####
+    ##### For TensorFlow v2 #####
     # results = model.fit(
     #     x                       = training_images,      # keras.utils.Sequence
     #     epochs                  = number_of_epochs,
     #     verbose                 = 1,
-    #     # callbacks               = [checkpointer, earlyStopper, autoLR, scheduleLR, csvlogger, tensorboard],
-    #     callbacks               = [checkpointer, earlyStopper, autoLR, scheduleLR, csvlogger],
+    #     # callbacks               = [check_pointer, early_stopper, lr_manager, lr_scheduler, csv_logger, tensorboard],
+    #     callbacks               = [check_pointer, early_stopper, lr_manager, lr_scheduler, csv_logger],
     #     validation_data         = validation_images.getdata(),  # tuple of Numpy arrays
     #     shuffle                 = False,
     #     initial_epoch           = init_epoch,
     #     validation_freq         = 1,
     #     max_queue_size          = 10,
-    #     workers                 = 10,
+    #     workers                 = 1,
     #     use_multiprocessing     = False )
 
 
     # Show results
     print('\n- Saving training graph...')
-    his_loss = results.history[model.metrics_names[0]]
-    his_met1 = results.history[model.metrics_names[1]]
-    his_met2 = results.history[model.metrics_names[2]]
-    his_valloss = results.history['val_'+model.metrics_names[0]]
-    his_valmet1 = results.history['val_'+model.metrics_names[1]]
-    his_valmet2 = results.history['val_'+model.metrics_names[2]]
-    xlen = range(len(his_loss))
+    try:
+        his_loss = results.history['loss']
+        his_miou = results.history['iou_score']
+        his_dice = results.history['dice_coef']
+        his_valloss = results.history['val_loss']
+        his_valmiou = results.history['val_iou_score']
+        his_valdice = results.history['val_dice_coef']
+        xlen = range(len(his_loss))
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)      # Loss
-    ax2 = ax1.twinx()
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)      # Loss
+        ax2 = ax1.twinx()
 
-    ax1.plot(xlen, his_loss, marker='.', color='salmon', label=loss.__name__)
-    ax1.plot(xlen, his_valloss, marker='.', color='red', label='val_'+loss.__name__)
-    ax2.plot(xlen, his_met1, marker='.', color='deepskyblue', label=model.metrics_names[1])
-    ax2.plot(xlen, his_valmet1, marker='.', color='blue', label='val_'+model.metrics_names[1])
-    ax2.plot(xlen, his_met2, marker='.', color='limegreen', label=model.metrics_names[2])
-    ax2.plot(xlen, his_valmet2, marker='.', color='green', label='val_'+model.metrics_names[2])
+        ax1.plot(xlen, his_loss, marker='.', color='salmon', label='Loss - training')
+        ax1.plot(xlen, his_valloss, marker='.', color='red', label='Loss - validation')
+        ax2.plot(xlen, his_miou, marker='.', color='deepskyblue', label='mIoU - training')
+        ax2.plot(xlen, his_valmiou, marker='.', color='blue', label='mIoU - validation')
+        ax2.plot(xlen, his_dice, marker='.', color='limegreen', label='Dice - training')
+        ax2.plot(xlen, his_valdice, marker='.', color='green', label='Dice - validation')
 
-    ax1.set_xlabel('Epoch')
-    ax1.set_ylabel(loss.__name__)
-    ax1.set_yscale("log")
-    ax1.set_ylim([0.001, 1.0])
-    ax2.set_ylabel('Metrics')
-    ax2.set_yscale("log")
-    ax2.set_ylim([0.7, 1.0])
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Loss:'+loss.__name__)
+        ax1.set_yscale("log")
+        ax1.set_ylim([0.001, 10.0])
+        ax2.set_ylabel('Metrics')
+        ax2.set_yscale("log")
+        ax2.set_ylim([0.6, 1.0])
 
-    h1, l1 = ax1.get_legend_handles_labels()
-    h2, l2 = ax2.get_legend_handles_labels()
-    ax1.legend(h1+h2, l1+l2, loc='lower center')
+        h1, l1 = ax1.get_legend_handles_labels()
+        h2, l2 = ax2.get_legend_handles_labels()
+        ax1.legend(h1+h2, l1+l2, loc='lower center')
 
-    plt.savefig(os.path.join(work_dir_path,'training_graph.png'))
-    # plt.show()
+        plt.savefig(os.path.join(work_dir_path,'training_graph.png'))
+        # plt.show()
+
+    except:
+        print('ALERT: Failed to save the training graph figure.')
 
 
     # Save the trained model
-    print('\n- Saving trained model...')
-    if LR_params['monitor_for_best'][1] == 'max': score = max(results.history[LR_params['monitor_for_best'][0]])
-    else:                                         score = min(results.history[LR_params['monitor_for_best'][0]])
-    save_name = 'model{0}, {1}={2:.4f}, {3} by {4}.h5'.format(datestr, LR_params['monitor_for_best'][0], score, training_mode, NN_model_name)
-    save_path = os.path.join(work_dir_path, save_name)
-    model.save(save_path)
-    time.sleep(20)
-    print('Final model path: ' + save_path)
+    # print('\n- Saving trained model...')
+    # save_name = 'model{0}, mIoU={1:.4f}, {2} by {3}.h5'.format(datestr, np.nanmax(his_valmiou), training_mode, NN_model_name)
+    # save_path = os.path.join(work_dir_path, save_name)
+    # model.save(filepath=save_path, overwrite=True, include_optimizer=True)
+    # time.sleep(20)
+    # print('Final model path: ' + save_path)
 
-    if os.path.exists(tmp_model_path):
-        os.remove(tmp_model_path)
-        print('Temp model removed: ' + tmp_model_path)
+    # if os.path.exists(model_base_path):
+    #     os.remove(model_base_path)
+    #     print('Temp model removed: ' + model_base_path)
 
 
     print('\n==================================================================================================')

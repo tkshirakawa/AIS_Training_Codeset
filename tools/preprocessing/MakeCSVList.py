@@ -3,15 +3,14 @@
     e-mail: tkshirakawa@gmail.com
     
     
-    Released under the BSD license.
-    URL: https://opensource.org/licenses/BSD-2-Clause
-    
-    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-    
-    1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Released under the MIT license.
+    https://opensource.org/licenses/mit-license.php
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 
@@ -21,17 +20,15 @@ import glob
 import csv
 
 
+print('Description : Make a CSV list of paths for image files in <case**> directories.')
+
 if sys.argv[1] == '-h':
     print('### Help for argv ###')
-    print('  argv[1] : Path to a directory containing <case**> directories')
-    print('  argv[2] : Image file type, .jpg or .png')
-    sys.exit()
+    print('  argv[1] : Path to a directory containing <case**> directories.')
+    print('  argv[2] : Image file type, .jpg or .png.')
+    sys.exit(0)
 
 
-# dirNameListX = ['x', 'x_C', 'x_C_CP0', 'x_C_CP1', 'x_C_CP2', 'x_C_CP3', 'x_C_CP4', 'x_C_DKM', 'x_C_DKP', 'x_C_HSR', 'x_C_HSL', 'x_C_HT', 'x_C_RTM', 'x_C_RTP', 'x_C_WD',
-#                      'x_O', 'x_O_CP0', 'x_O_CP1', 'x_O_CP2', 'x_O_CP3', 'x_O_CP4', 'x_O_DKM', 'x_O_DKP', 'x_O_HSR', 'x_O_HSL', 'x_O_HT', 'x_O_RTM', 'x_O_RTP', 'x_O_WD' ]
-# dirNameListY = ['y', 'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD',
-#                      'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD' ]
 dirNameListX = ['x_A', 'x_A_CP0', 'x_A_CP1', 'x_A_CP2', 'x_A_CP3', 'x_A_CP4', 'x_A_DKM', 'x_A_DKP', 'x_A_HSR', 'x_A_HSL', 'x_A_HT', 'x_A_RTM', 'x_A_RTP', 'x_A_WD',
                 'x_B', 'x_B_CP0', 'x_B_CP1', 'x_B_CP2', 'x_B_CP3', 'x_B_CP4', 'x_B_DKM', 'x_B_DKP', 'x_B_HSR', 'x_B_HSL', 'x_B_HT', 'x_B_RTM', 'x_B_RTP', 'x_B_WD',
                 'x_C', 'x_C_CP0', 'x_C_CP1', 'x_C_CP2', 'x_C_CP3', 'x_C_CP4', 'x_C_DKM', 'x_C_DKP', 'x_C_HSR', 'x_C_HSL', 'x_C_HT', 'x_C_RTM', 'x_C_RTP', 'x_C_WD',
@@ -41,9 +38,11 @@ dirNameListY = ['y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y
                 'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD',
                 'y_O', 'y_O_CP0', 'y_O_CP1', 'y_O_CP2', 'y_O_CP3', 'y_O_CP4', 'y_O_DKM', 'y_O_DKP', 'y_O_HSR', 'y_O_HSL', 'y_O_HT', 'y_O_RTM', 'y_O_RTP', 'y_O_WD' ]
 
+
 csvFile = open(os.path.join(sys.argv[1], 'MakeCSVList_result.csv'), 'w', newline='', encoding='utf-8')
 csvWriter = csv.writer(csvFile)
 csvWriter.writerow(['x', 'y'])
+
 
 for X, Y in zip(dirNameListX, dirNameListY):
     fileListX = glob.glob(os.path.join(sys.argv[1], 'case*', X, '[0-9][0-9][0-9][0-9]'+sys.argv[2]))
@@ -72,4 +71,6 @@ for X, Y in zip(dirNameListX, dirNameListY):
     csvWriter.writerows(listData)
 
 csvFile.close()
+
+
 

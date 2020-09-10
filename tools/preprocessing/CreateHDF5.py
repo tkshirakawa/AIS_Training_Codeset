@@ -1,8 +1,16 @@
 '''
     Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
     e-mail: tkshirakawa@gmail.com
+    
+    
+    Released under the MIT license.
+    https://opensource.org/licenses/mit-license.php
 
-    Released under the BSD 3-Clause License
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 
@@ -14,15 +22,14 @@ import numpy as np
 import h5py
 
 
-
-
 if sys.argv[1] == '-h':
     print('### Help for argv ###')
-    print('  argv[1] : Path to a CSV file for training image paths')
-    print('  argv[2] : Path to a CSV file for validation image paths')
-    print('  argv[3] : Path to a directory to save h5 image dataset in it')
-    print('  NOTE: Input none to pass argv[1] or argv[2]')
-    sys.exit()
+    print('  argv[1] : Path to a CSV file for training image paths.')
+    print('  argv[2] : Path to a CSV file for validation image paths.')
+    print('  argv[3] : Path to a directory to save h5 image dataset in it.')
+    print('  NOTE: Input none to ignore argv[1] or argv[2].')
+    sys.exit(0)
+
 
 
 
@@ -31,19 +38,25 @@ def ReadImage_and_CreateH5(paths, dataname, shuffle=True):
     if paths is None:
         return
 
+    # Image size
     csvlength = len(paths)
+    img_check = cv2.imread(paths[0][0], -1)
+    height, width = img_check.shape[:2]
+
 
     print(' ')
     print('Data name : {0}'.format(dataname))
     print('Images    : {0}'.format(csvlength))
+    print('H,W       : {0}x{1}'.format(height, width))
 
 
     # Store image data as 'uint8'
-    XX = np.empty((csvlength, 200, 200, 1), dtype=np.uint8)
-    YY = np.empty((csvlength, 200, 200, 1), dtype=np.uint8)
+    XX = np.empty((csvlength, height, width, 1), dtype=np.uint8)
+    YY = np.empty((csvlength, height, width, 1), dtype=np.uint8)
     index = np.arange(csvlength)        # [0,1,2, ...]
     if shuffle:
         np.random.shuffle(index)
+
 
     # To improve loading speed for huge set of images, loading ten sets per one loop
     lastnum_for10set = 10 * (csvlength // 10)
@@ -119,7 +132,7 @@ def Check_Duplication(list1, list2):
         print('ERROR!!! Duplicated path(s) found in training and validation datasets !!!')
         print('Counts : {}'.format(len(dup)))
         for p in dup: print(p)
-        sys.exit()
+        sys.exit(0)
     else:
         print('Good! No duplicated path(s) found in training and validation datasets.')
 

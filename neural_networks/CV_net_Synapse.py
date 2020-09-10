@@ -1,29 +1,37 @@
 '''
     Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
     e-mail: tkshirakawa@gmail.com
+    
+    
+    Released under the MIT license.
+    https://opensource.org/licenses/mit-license.php
 
-    Released under the BSD 3-Clause License
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 
-##### For TensorFlow v2.0 #####
-# import tensorflow as tf
-# from tensorflow import keras
-# from tensorflow.keras import backend as K
-# from tensorflow.keras.models import Model
-# from tensorflow.keras.layers import Input, Layer, BatchNormalization, Activation, Dropout, ZeroPadding2D
-# from tensorflow.keras.layers import Conv2D, SeparableConv2D, Conv2DTranspose, UpSampling2D
-# from tensorflow.keras.layers import MaxPooling2D
-# from tensorflow.keras.initializers import TruncatedNormal
-# from tensorflow.keras.layers import Concatenate
+import tensorflow as tf
 
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, BatchNormalization, Activation, Dropout, ZeroPadding2D
-from keras.layers.noise import AlphaDropout, GaussianDropout, GaussianNoise
+from keras.layers import Input, Layer, BatchNormalization, Activation, Dropout, SpatialDropout2D, ZeroPadding2D
+from keras.layers.noise import GaussianDropout, GaussianNoise
 from keras.layers.convolutional import Conv2D, SeparableConv2D, Conv2DTranspose, UpSampling2D
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.merge import Concatenate
+
+##### For TensorFlow v2 #####
+# from tensorflow import keras
+# from tensorflow.keras import backend as K
+# from tensorflow.keras.models import Model
+# from tensorflow.keras.layers import Input, Layer, BatchNormalization, Activation, ZeroPadding2D
+# from tensorflow.keras.layers import Conv2D, SeparableConv2D, Conv2DTranspose, UpSampling2D, MaxPooling2D
+# from tensorflow.keras.layers import Concatenate
+# from tensorflow.keras.layers import Dropout, SpatialDropout2D, GaussianDropout, GaussianNoise
 
 
 
@@ -33,9 +41,15 @@ from keras.layers.merge import Concatenate
     The layer calculates and learn only two parameters, linear weight and bias for input tensor.
 '''
 import math
+
 from keras.initializers import TruncatedNormal
 from keras.regularizers import l2
 from keras.engine.base_layer import InputSpec
+
+##### For TensorFlow v2 #####
+# from tensorflow.keras.initializers import TruncatedNormal
+# from tensorflow.keras.regularizers import l2
+# from tensorflow.keras.layers import InputSpec
 
 class SynapticTransmissionRegulator(Layer):
 
@@ -114,14 +128,15 @@ def Custom_Layers(): return { 'ParametricSwish': ParametricSwish, 'SynapticTrans
     Define a batch size used for training.
 '''
 # def Batch_Size(): return 16     # for nVidia RTX2070, 8GB VRAM
-def Batch_Size(): return 46     # for nVidia TITAN RTX, 24GB VRAM
+def Batch_Size(): return 80     # for nVidia TITAN RTX, 24GB VRAM
 
 
 '''
     Define an optimizer used for training.
 '''
 from keras.optimizers import SGD, Adam, Nadam
-def Optimizer(base_lr=0.1): return SGD(lr=base_lr, momentum=0.9, nesterov=True)
+# from tensorflow.keras.optimizers import SGD, Adam, Nadam      ##### For TensorFlow v2 #####
+def Optimizer(base_lr=0.1): return SGD(lr=base_lr, momentum=0.95, nesterov=True)
 # def Optimizer(base_lr=0.001): return Adam(lr=base_lr, beta_1=0.9, beta_2=0.999, amsgrad=False)
 # def Optimizer(base_lr=0.001): return Nadam(lr=base_lr, beta_1=0.9, beta_2=0.999)
 
@@ -134,7 +149,9 @@ def Optimizer(base_lr=0.1): return SGD(lr=base_lr, momentum=0.9, nesterov=True)
     Note: The graph will NOT be used when the formula is defined. In other words, the formula is used prior to the graph.
 '''
 # def Learning_Rate_Formula(): return [None, 0.0, 0]
-def Learning_Rate_Formula(): return ['poly', 0.1, 50]        #
+# def Learning_Rate_Formula(): return ['poly', 0.35, 80]          # For heart structures
+def Learning_Rate_Formula(): return ['poly', 0.50, 100]         # For AS calcium
+# def Learning_Rate_Formula(): return ['poly', 0.50, 50]
 # def Learning_Rate_Formula(): return ['poly', 0.25, 50]        # For heart structures / SGD / batch size = 16
 # def Learning_Rate_Formula(): return ['poly', 0.5, 50]         # For heart structures / SGD / batch size = 42
 # def Learning_Rate_Formula(): return ['poly', 0.5, 100]        # For brain tumor / SGD / batch size = 16
@@ -206,7 +223,7 @@ def SynapticNeuronUnit(dendrites, filter_size, kernel_size, CRP, d_rate, use_STR
     else:
         neuro_potential = None      # Will be error
 
-    neuro_potential = BatchNormalization(momentum=0.9)(neuro_potential)
+    neuro_potential = BatchNormalization(momentum=0.95)(neuro_potential)
     neuro_potential = ParametricSwish()(neuro_potential)
 
 
@@ -214,10 +231,10 @@ def SynapticNeuronUnit(dendrites, filter_size, kernel_size, CRP, d_rate, use_STR
     if CRP[1] == 'MaxPooling': neuro_potential = MaxPooling2D()(neuro_potential)
 
 
-    # if d_rate > 0.0: return Dropout(rate=d_rate)(neuro_potential)
-    # if d_rate > 0.0: return AlphaDropout(rate=d_rate)(neuro_potential)
-    if d_rate > 0.0: return GaussianDropout(rate=d_rate)(neuro_potential)
-    else:            return neuro_potential
+    if d_rate[0] > 0.0: neuro_potential = GaussianDropout(rate=d_rate[0])(neuro_potential)
+    if d_rate[1] > 0.0: neuro_potential = SpatialDropout2D(rate=d_rate[1])(neuro_potential)
+
+    return neuro_potential
 
 
 
@@ -236,13 +253,22 @@ def SynapticNeuronUnit(dendrites, filter_size, kernel_size, CRP, d_rate, use_STR
 def Build_Model():
 
     _num_classes = Number_of_Classes()          # Classes used in this NN
+
+    # Convolution methods for SynapticNeuronUnit layers
     # _ENC = ('Normal', 'MaxPooling', 'same')
     _ENC = ('Atrous', 'None', 'valid')
     _NNv = ('Normal', 'None', 'valid')
     _SNs = ('Separable', 'None', 'same')
     _SNv = ('Separable', 'None', 'valid')
     _TUs = ('Transpose', 'UpSampling', 'same')
-    _dropout_rate = 0.5
+
+    # Rate for dropout and noise layers
+    # NOTE: The larger values (around 0.5) may be better when segmentation will have large area such as the heart
+    # On the other hand, for small segmentation area such as calcium deposits on a valve,
+    # the rate for SpatialDropout2D should be ZERO and the stddev for GaussianNoise should be small
+    _dropout_rate1  = (0.20, 0.0)           # (rate for GaussianDropout, rate for SpatialDropout2D)
+    _dropout_rate2  = (0.40, 0.0)           # (rate for GaussianDropout, rate for SpatialDropout2D)
+    _stddev_g_noise = 0.10                  # std.deviation for GaussianNoise
 
 
     # Do not change "name='input'", because the name is used to identify the input layer in A.I.Segmentation.
@@ -250,72 +276,68 @@ def Build_Model():
 
 
     # Cerate stimulation from inputs
-    stimulation = Conv2D(filters=8, kernel_size=(9, 9), kernel_initializer='glorot_uniform', use_bias=False)(inputs)
-    stimulation = BatchNormalization(momentum=0.9)(stimulation)
-    stimulation = Activation('sigmoid')(stimulation)                        # Skip connection
+    stimulation = Conv2D(filters=8, kernel_size=9, kernel_initializer='glorot_uniform', use_bias=False)(inputs)
+    stimulation = BatchNormalization(momentum=0.95)(stimulation)
+    stimulation = Activation('sigmoid')(stimulation)                # Skip connection
 
 
     # Main neural network
     # def SynapticNeuronUnit(dendrites, filter_size, kernel_size, CRP, d_rate, use_STR)
-    enc_potential_96  = SynapticNeuronUnit(stimulation,        16,  3, _ENC, _dropout_rate, False)      # 96
-    enc_potential_96A = SynapticNeuronUnit(enc_potential_96,   16,  1, _NNv, _dropout_rate, False)
-    enc_potential_96B = SynapticNeuronUnit(enc_potential_96,   16,  5, _SNs, _dropout_rate, False)
-    enc_potential_96  = Concatenate()([enc_potential_96A, enc_potential_96B])                           # Skip connection
+    enc_potential_96  = SynapticNeuronUnit(stimulation,        16,  3, _ENC, _dropout_rate1, False)     # 96
+    enc_potential_96A = SynapticNeuronUnit(enc_potential_96,   16,  1, _NNv, _dropout_rate2, False)
+    enc_potential_96B = SynapticNeuronUnit(enc_potential_96,   16,  5, _SNs, _dropout_rate2, False)
+    enc_potential_96  = Concatenate()([enc_potential_96A, enc_potential_96B])                               # Skip connection
 
-    enc_potential_48  = SynapticNeuronUnit(enc_potential_96,   32,  3, _ENC, _dropout_rate, False)      # 48
-    enc_potential_48A = SynapticNeuronUnit(enc_potential_48,   32,  1, _NNv, _dropout_rate, False)
-    enc_potential_48B = SynapticNeuronUnit(enc_potential_48,   32,  5, _SNs, _dropout_rate, False)
-    enc_potential_48  = Concatenate()([enc_potential_48A, enc_potential_48B])                           # Skip connection
+    enc_potential_48  = SynapticNeuronUnit(enc_potential_96,   32,  3, _ENC, _dropout_rate1, False)     # 48
+    enc_potential_48A = SynapticNeuronUnit(enc_potential_48,   32,  1, _NNv, _dropout_rate2, False)
+    enc_potential_48B = SynapticNeuronUnit(enc_potential_48,   32,  5, _SNs, _dropout_rate2, False)
+    enc_potential_48  = Concatenate()([enc_potential_48A, enc_potential_48B])                               # Skip connection
 
-    enc_potential_24  = SynapticNeuronUnit(enc_potential_48,  128,  3, _ENC, _dropout_rate, True)       # 24
-    enc_potential_24A = SynapticNeuronUnit(enc_potential_24,  128,  1, _NNv, _dropout_rate, False)
-    enc_potential_24B = SynapticNeuronUnit(enc_potential_24,  128,  5, _SNs, _dropout_rate, False)
-    enc_potential_24  = Concatenate()([enc_potential_24A, enc_potential_24B])                           # Skip connection
+    enc_potential_24  = SynapticNeuronUnit(enc_potential_48,  128,  3, _ENC, _dropout_rate1, True)      # 24
+    enc_potential_24A = SynapticNeuronUnit(enc_potential_24,  128,  1, _NNv, _dropout_rate2, False)
+    enc_potential_24B = SynapticNeuronUnit(enc_potential_24,  128,  5, _SNs, _dropout_rate2, False)
+    enc_potential_24  = Concatenate()([enc_potential_24A, enc_potential_24B])                               # Skip connection
 
-    enc_potential_12  = SynapticNeuronUnit(enc_potential_24,  512,  3, _ENC, _dropout_rate, True)       # 12
-    enc_potential_12A = SynapticNeuronUnit(enc_potential_12,  512,  1, _NNv, _dropout_rate, False)
-    enc_potential_12B = SynapticNeuronUnit(enc_potential_12,  512,  5, _SNs, _dropout_rate, False)
-    enc_potential_12  = Concatenate()([enc_potential_12A, enc_potential_12B])                           # Skip connection
+    enc_potential_12  = SynapticNeuronUnit(enc_potential_24,  512,  3, _ENC, _dropout_rate1, True)      # 12
+    enc_potential_12A = SynapticNeuronUnit(enc_potential_12,  512,  1, _NNv, _dropout_rate2, False)
+    enc_potential_12B = SynapticNeuronUnit(enc_potential_12,  512,  5, _SNs, _dropout_rate2, False)
+    enc_potential_12  = Concatenate()([enc_potential_12A, enc_potential_12B])                               # Skip connection
 
-    deep_potential    = SynapticNeuronUnit(enc_potential_12, 1152,  5, _SNv, _dropout_rate/2.0, True)   # 08
-    deep_potential    = SynapticNeuronUnit(deep_potential,   2048,  3, _SNv, _dropout_rate/2.0, True)   # 06
+    deep_potential    = SynapticNeuronUnit(enc_potential_12, 1024,  5, _SNv, _dropout_rate1, True)      # 08
+    deep_potential    = SynapticNeuronUnit(deep_potential,   2048,  3, _SNv, _dropout_rate1, True)      # 06
 
-    dec_potential_12  = SynapticNeuronUnit(deep_potential,    512,  3, _TUs, _dropout_rate, True)       # 12
+    dec_potential_12  = SynapticNeuronUnit(deep_potential,    512,  3, _TUs, _dropout_rate1, True)      # 12
     dec_potential_12  = Concatenate()([dec_potential_12, enc_potential_12])
 
-    dec_potential_24  = SynapticNeuronUnit(dec_potential_12,  384,  3, _TUs, _dropout_rate, True)       # 24
+    dec_potential_24  = SynapticNeuronUnit(dec_potential_12,  384,  3, _TUs, _dropout_rate1, True)      # 24
     dec_potential_24  = Concatenate()([dec_potential_24, enc_potential_24])
 
-    dec_potential_48  = SynapticNeuronUnit(dec_potential_24,  160,  3, _TUs, _dropout_rate, True)       # 48
+    dec_potential_48  = SynapticNeuronUnit(dec_potential_24,  160,  3, _TUs, _dropout_rate1, True)      # 48
     dec_potential_48  = Concatenate()([dec_potential_48, enc_potential_48])
 
-    dec_potential_96  = SynapticNeuronUnit(dec_potential_48,   56,  3, _TUs, _dropout_rate, False)      # 96
+    dec_potential_96  = SynapticNeuronUnit(dec_potential_48,   56,  3, _TUs, _dropout_rate1, False)     # 96
     dec_potential_96  = Concatenate()([dec_potential_96, enc_potential_96])
 
-    axon_potential    = SynapticNeuronUnit(dec_potential_96,   32,  3, _TUs, _dropout_rate, False)      # 192
+    axon_potential    = SynapticNeuronUnit(dec_potential_96,   24,  3, _TUs, _dropout_rate1, False)     # 192
     axon_potential    = Concatenate()([axon_potential, stimulation])
 
 
     # The vision from synaptic neurons
-    vision = Conv2DTranspose(filters=32, kernel_size=(7, 7), kernel_initializer='he_uniform', use_bias=False)(axon_potential)
-    vision = BatchNormalization(momentum=0.9)(vision)
+    vision = Conv2DTranspose(filters=32, kernel_size=7, kernel_initializer='he_uniform', use_bias=False)(axon_potential)
+    vision = BatchNormalization(momentum=0.95)(vision)
     vision = ParametricSwish()(vision)
+    vision = GaussianNoise(stddev=_stddev_g_noise)(vision)
 
-    vision = GaussianNoise(stddev=0.1)(vision)
-    # vision = Dropout(rate=_dropout_rate/2.0)(vision)
-
-    vision = Conv2DTranspose(filters=32, kernel_size=(3, 3), kernel_initializer='he_uniform', use_bias=False)(vision)
-    vision = BatchNormalization(momentum=0.9)(vision)
+    vision = Conv2DTranspose(filters=16, kernel_size=3, kernel_initializer='he_uniform', use_bias=False)(vision)
+    vision = BatchNormalization(momentum=0.95)(vision)
     vision = ParametricSwish()(vision)
-
-    vision = GaussianNoise(stddev=0.1)(vision)
-    # vision = Dropout(rate=_dropout_rate/2.0)(vision)
+    vision = GaussianNoise(stddev=_stddev_g_noise)(vision)
 
     vision = Concatenate()([vision, inputs])
 
 
     # Do not change "name='output'", because the name is used to identify the output layer in A.I.Segmentation.
-    outputs = Conv2D(filters=_num_classes, kernel_size=(1, 1), kernel_initializer='glorot_uniform')(vision)
+    outputs = Conv2D(filters=_num_classes, kernel_size=1, kernel_initializer='glorot_uniform')(vision)
     outputs = SynapticTransmissionRegulator()(outputs)
     outputs = Activation('sigmoid', name='output')(outputs)
 

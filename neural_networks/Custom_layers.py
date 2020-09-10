@@ -1,25 +1,35 @@
 '''
     Copyright (c) 2019-2020, Takashi Shirakawa. All rights reserved.
     e-mail: tkshirakawa@gmail.com
+    
+    
+    Released under the MIT license.
+    https://opensource.org/licenses/mit-license.php
 
-    Released under the BSD 3-Clause License
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 
-##### For TensorFlow v2.0 #####
-# import tensorflow as tf
-# from tensorflow.keras import backend as K
-# from tensorflow.keras.layers import Layer
-# from tensorflow.keras.initializers import Constant, Ones, TruncatedNormal, RandomUniform
-# from tensorflow.keras.engine.base_layer import InputSpec
+import math
+
+import tensorflow as tf
 
 from keras import backend as K
 from keras.layers import Layer
-from keras.initializers import Constant, Ones, TruncatedNormal, RandomUniform
+from keras.initializers import Constant, Ones, TruncatedNormal
 from keras.constraints import NonNeg
 from keras.engine.base_layer import InputSpec
 
-import math
+##### For TensorFlow v2 #####
+# from tensorflow import keras
+# from tensorflow.keras import backend as K
+# from tensorflow.keras.layers import Layer, InputSpec
+# from tensorflow.keras.initializers import Constant, Ones, TruncatedNormal
+# from tensorflow.keras.constraints import NonNeg
 
 
 
@@ -64,7 +74,6 @@ class ParametricSwish(Layer):
         self.alpha = self.add_weight(name        = 'alpha',
                                      shape       = list(input_shape[1:]),
                                      initializer = TruncatedNormal(mean=1.0, stddev=stddev),
-                                    #  initializer = RandomUniform(minval=1.0-stddev, maxval=1.0+stddev),
                                      trainable   = True,
                                      constraint  = NonNeg() )
         self.input_spec = InputSpec(ndim=len(input_shape))
@@ -99,7 +108,6 @@ class FullSizePReLU(Layer):
         self.alpha = self.add_weight(name        = 'alpha',
                                      shape       = list(input_shape[1:]),
                                      initializer = TruncatedNormal(mean=0.2, stddev=stddev),
-                                    #  initializer = RandomUniform(minval=0.2-stddev, maxval=0.2+stddev),
                                      trainable   = True)
         self.input_spec = InputSpec(ndim=len(input_shape))
         super(FullSizePReLU, self).build(input_shape)

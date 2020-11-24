@@ -1,24 +1,24 @@
 # AIS Training Codeset
-Python codes to train neural network models of Keras with your original dataset [1] for semantic segmentation. You can use your trained models in Python command lines as usual. Moreover, you can convert the models into macOS Core ML models which are loadable for A.I.Segmentation [2], a macOS GUI plugin for semantic segmentation of medical images in DICOM data.
+This codeset is a set of Python codes to train neural network models of Keras with your original dataset [1] for semantic segmentation. You can use your trained models in Python command lines as usual. Moreover, you can convert the models into macOS Core ML models which are loadable for A.I.Segmentation [2], a macOS GUI plugin for semantic segmentation of medical images in DICOM data.
 
-> [1] A dataset is pairs of medical images and grandtruth masks (**Fig.1**). Images trainable in this system are squre and 8-bit grayscale w/o alpha channel. **See [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**  
+> [1] A dataset is pairs of images and grandtruth masks (**Fig.1**). Images trainable in this system are squre and 8-bit grayscale w/o alpha channel. **See [How to Use AIS Training Codeset](https://github.com/tkshirakawa/AIS_Training_Codeset/blob/master/How%20to%20Use%20AIS%20Training%20Codeset.pdf) for more details.**  
 > [2] A.I.Segmentation is a simple plugin for OsiriX.  
 > [A.I.Segmentation](https://compositecreatures.jimdofree.com/a-i-segmentation/), an OsiriX plugin that performs semantic segmentation based on Apple's Core ML technology.  
 > [OsiriX](https://www.osirix-viewer.com), the most advanced DICOM viewer for macOS than ever before.  
-> [Core ML](https://developer.apple.com/machine-learning/core-ml/)  
+> [Core ML](https://developer.apple.com/machine-learning/core-ml/), Apple's API for neural network computation.  
 <br>
 
 <img width="170" alt="dataset" src="https://user-images.githubusercontent.com/52600509/92623102-ccd0b180-f300-11ea-83e8-456f8acb50a2.png">
 
-**Figure 1.** A trainable dataset of a cardiac CT image and segmentation mask of the heart.
+**Figure 1.** A dataset sample of a cardiac CT image and segmentation mask of the heart.
 
 <br>
 <br>
 
 ## Description
 Before you use this codeset and system, you need:
-- **GPU computer** - or cloud GPU
-- **Windows or Linux** - because TensorFlow-GPU is optimized for those OSs
+- **Computer with GPU or Neural engine** - CPU-only computers are not good for a large training dataset.
+- **Windows or Linux** - TensorFlow is optimized for those OSs. *Mac with Apple Silicon may have good performance with TensorFlow.
 - **Python 3.7.7 / Keras 2.2.4 / TensorFlow 1.15.0** - TF 2.* is available but you may have compatibility troubles when converting the model into macOS Core ML format.
 - **Your dataset** - the most important thing is giving accurate and precise segmentation masks.
 

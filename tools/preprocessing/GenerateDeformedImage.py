@@ -45,6 +45,22 @@ def makeDirsByDeletingOld(path):
 
 
 
+def applyNlMeansDenoising(image, size=2, templateWindowSize=7, searchWindowSize=21):
+    return cv2.fastNlMeansDenoising(image, None, size, templateWindowSize, searchWindowSize)
+
+
+
+
+# def applyBilateralFilter(image, size=5, sigmaColor=10, sigmaSpace=10):
+def applyBilateralFilter(image, size=-1, sigmaColor=3.0, sigmaSpace=1.5):
+    image_tmp = image
+    for i in range(3):
+        image_tmp = cv2.bilateralFilter(image_tmp, size, sigmaColor, sigmaSpace)
+    return image_tmp
+
+
+
+
 def applyCLAHE(image, clipLimit=1.4, tileGridSize=(4,4)):
     clahe = cv2.createCLAHE(clipLimit=clipLimit, tileGridSize=tileGridSize)
     return clahe.apply(image)
@@ -52,8 +68,17 @@ def applyCLAHE(image, clipLimit=1.4, tileGridSize=(4,4)):
 
 
 
-def applyBilateralFilter(image, size=5, sigma1=10, sigma2=10):
-    return cv2.bilateralFilter(image, size, sigma1, sigma2)
+def applyPosterization(image, nstep=32):
+    look_up_table = np.zeros((256, 1), dtype = 'uint8')
+    step, mod = divmod(256, nstep)
+    step_0 = step + mod // 2
+    step_1 = 256 - step_0 - step * (nstep - 2)
+    look_up_table[0:step_0][0] = step_0 / 2
+    for istep in range(step_0, 256-step_1, step):
+        iistep = min(istep + step, 256)
+        look_up_table[istep:iistep][0] = (istep + iistep) / 2
+    look_up_table[256-step_1:][0] = (step_1 + 255) / 2
+    return cv2.LUT(cv2.bilateralFilter(image, 10, 10, 10), look_up_table)
 
 
 
@@ -67,8 +92,8 @@ def generateDeformedImage(format_ext, data_dir, dummy, modality, trimming):
         print('### ERROR: Use jpg or png for input and result images!')
         sys.exit(0)
 
-    if modality == 'image':         # [ Original, CLAHE, bilateralFilter, CLAHE+bilateralFilter ]
-        outputDirpath = [data_dir+'_O', data_dir+'_C', data_dir+'_B', data_dir+'_A']
+    if modality == 'image':         # [ Original, A, B, C ]
+        outputDirpath = [data_dir+'_O', data_dir+'_A', data_dir+'_B', data_dir+'_C']
     elif modality == 'mask':        # [ Original ]
         outputDirpath = [data_dir+'_O']
     else:
@@ -98,16 +123,16 @@ def generateDeformedImage(format_ext, data_dir, dummy, modality, trimming):
 
     # Parameters
     # For heart structure
-    # HW_padding = int(img_size * 0.050)          # For height and width deformation
-    # trz_padding = int(img_size * 0.125)         # For trapezoid deformation
-    # plg_padding = int(img_size * 0.100)         # For parallelogram deformation
-    # rot_angle = 8                               # For rotation
+    HW_padding = int(img_size * 0.050)          # For height and width deformation
+    trz_padding = int(img_size * 0.125)         # For trapezoid deformation
+    plg_padding = int(img_size * 0.100)         # For parallelogram deformation
+    rot_angle = 8                               # For rotation
 
     # For AS calcium
-    HW_padding = int(img_size * 0.050)          # For height and width deformation
-    trz_padding = int(img_size * 0.150)         # For trapezoid deformation
-    plg_padding = int(img_size * 0.150)         # For parallelogram deformation
-    rot_angle = 15                              # For rotation
+    # HW_padding = int(img_size * 0.050)          # For height and width deformation
+    # trz_padding = int(img_size * 0.150)         # For trapezoid deformation
+    # plg_padding = int(img_size * 0.150)         # For parallelogram deformation
+    # rot_angle = 15                              # For rotation
 
 
     clipTB = int(trimming)
@@ -141,15 +166,21 @@ def generateDeformedImage(format_ext, data_dir, dummy, modality, trimming):
             if dirpath[-1] == 'O':      # Original
                 img_src = cv2.copyMakeBorder(img_src_tmp,
                                                 clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
-            elif dirpath[-1] == 'C':    # CLAHE
-                img_src = cv2.copyMakeBorder(applyCLAHE(img_src_tmp),
+            elif dirpath[-1] == 'A':    # NlMeansDenoising
+                img_src = cv2.copyMakeBorder(applyNlMeansDenoising(img_src_tmp),
                                                 clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
             elif dirpath[-1] == 'B':    # bilateralFilter
                 img_src = cv2.copyMakeBorder(applyBilateralFilter(img_src_tmp),
                                                 clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
-            elif dirpath[-1] == 'A':    # CLAHE+bilateralFilter
-                img_src = cv2.copyMakeBorder(applyBilateralFilter(applyCLAHE(img_src_tmp)),
+            elif dirpath[-1] == 'C':    # CLAHE
+                img_src = cv2.copyMakeBorder(applyCLAHE(img_src_tmp),
                                                 clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+            # elif dirpath[-1] == 'D':    # posterization
+            #     img_src = cv2.copyMakeBorder(applyPosterization(img_src_tmp),
+            #                                     clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
+            # elif dirpath[-1] == 'Z':    # CLAHE+bilateralFilter
+            #     img_src = cv2.copyMakeBorder(applyBilateralFilter(applyCLAHE(img_src_tmp)),
+            #                                     clipTB, clipTB, clipLR, clipLR, cv2.BORDER_CONSTANT, value=black)
 
             cv2.imwrite(os.path.join(dirpath, filename), img_src)
 

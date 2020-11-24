@@ -30,9 +30,9 @@ This codeset contains:
 - A converter code to convert a trained Keras model to a Core ML model for macOS [3].
 
 > [1] Special losses and metrics implemented in this codeset  
-> Focal CE loss: Tsung-Yi Lin, et al., Focal Loss for Dense Object Detection, [arXivk, 2018(v2)](https://arxiv.org/abs/1708.02002v2)  
-> Constrained focal CE loss: Y. Zhao, et al., Constrained-Focal-Loss Based Deep Learning for Segmentation of Spores, [IEEE Access vol.7, 2019](https://ieeexplore.ieee.org/document/8896836)  
-> Hausdorff distance loss: Karimi D, et al., Reducing the Hausdorff Distance in Medical Image Segmentation With Convolutional Neural Networks, [IEEE Trans Med Imaging, 2020](https://ieeexplore.ieee.org/document/8767031)  
+> Focal CE loss: Tsung-Yi Lin, et al., [arXivk, 2018(v2)](https://arxiv.org/abs/1708.02002v2)  
+> Constrained focal CE loss: Y. Zhao, et al., [IEEE Access vol.7, 2019](https://ieeexplore.ieee.org/document/8896836)  
+> Hausdorff distance loss: Karimi D, et al., [IEEE Trans Med Imaging, 2020](https://ieeexplore.ieee.org/document/8767031)  
 > [2] Neural network models  
 > **CV-net SYNAPSE: my original neural network**  
 > U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)  

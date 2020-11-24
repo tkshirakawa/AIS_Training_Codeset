@@ -240,7 +240,7 @@ def convert_keras_to_mlmodel(keras_model_path, coreml_model_path):
     print('----------------------------------------------------------')
     keras_model.summary()
 
-    del_prefixs = ['gaussian_dropout', 'gaussian_noise', 'dropout']     # Add here to define the layer to be deleted
+    del_prefixs = ['gaussian_dropout', 'gaussian_noise', 'dropout', 'spatial_dropout2d']     # Add here to define the layer to be deleted
 
     for del_prefix in del_prefixs:
         idp = 1
@@ -304,8 +304,8 @@ def convert_keras_to_mlmodel(keras_model_path, coreml_model_path):
     model.author = 'Takashi Shirakawa'
     model.license = '(C) 2019-2020, Takashi Shirakawa. All right reserved.'
     model.short_description = NN_model_name + ' for A.I.Segmentation'
-    model.input_description['input'] = 'Input grayscale image must be 8-bit depth (0-255 tones) per pixel with the size of 200x200 pixels.'
-    model.output_description['output'] = 'Predicted images (segmentation results) will be saved in the same format.'
+    model.input_description['input'] = 'Input is a square image with 8-bit grayscale per pixel.'
+    model.output_description['output'] = 'Output (segmentation) is supposed to be an image with the same dimension and format.'
 
 
     # Save mlmodel

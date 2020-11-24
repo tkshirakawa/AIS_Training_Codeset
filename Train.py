@@ -14,7 +14,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 '''
 
 
-##### For TensorFlow v2 #####
 # from __future__ import absolute_import
 # from __future__ import division
 # from __future__ import print_function
@@ -38,7 +37,6 @@ import os
 import platform
 import numpy as np
 import importlib.machinery as imm
-# import something as ...
 
 
 if platform.system() == 'Darwin':
@@ -46,46 +44,63 @@ if platform.system() == 'Darwin':
 
 
 # The absolute path to this file and directory
-exeFilePath = os.path.abspath(__file__)
-exeDirPath = os.path.dirname(exeFilePath)
-validFuncPath = os.path.join(exeDirPath, 'utils', 'Loss_and_metrics.py')
+trainFilePath = os.path.abspath(__file__)
+trainDirPath = os.path.dirname(trainFilePath)
 
 
-# Define loss and metrics
-# The following get_loss() and get_metrics() will be used in coremltools when converting a model trained in this sequence
+
+
+#############################################################################################
+# Define loss and metrics.
+
+lossAndMetricsPath = os.path.join(trainDirPath, 'utils', 'Loss_and_metrics.py')
+
+# The following get_loss() and get_metrics() will be used in coremltools when converting a trained model.
 # NOTE: The metrics defined in Loss_and_metrics.py may be estimated / assumed values, NOT final results.
 
-_LM = imm.SourceFileLoader('Loss_and_metrics', validFuncPath).load_module()
+_LM = imm.SourceFileLoader('Loss_and_metrics', lossAndMetricsPath).load_module()
+
 
 # Select a loss function for training
-# loss = _LM.mean_squared_error_loss
-# loss = _LM.Huber_loss
-# loss = _LM.LogCosh_loss
-# loss = _LM.kullback_leibler_divergence_loss
+# loss = _LM.MSE_loss
 # loss = _LM.MSE_loss_w_iou_score
-# loss = _LM.MSE_loss_w_iou_score_fpoet
-# loss = _LM.MSE_loss_w_dice_coef
-# loss = _LM.MSE_loss_w_dice_coef_fpoet
-# loss = _LM.Huber_loss_w_iou_score
+# loss = _LM.MSE_loss_w_dice_coef               # Good
+# loss = _LM.LogCosh_loss
 # loss = _LM.LogCosh_loss_w_iou_score
-# loss = _LM.LogCosh_loss_w_iou_score_fpoet
-loss = _LM.LogCosh_loss_w_dice_coef
-# loss = _LM.LogCosh_loss_w_dice_coef_fpoet
+# loss = _LM.LogCosh_loss_w_dice_coef           # Good
+# loss = _LM.KLD_loss
 # loss = _LM.KLD_loss_w_iou_score
 # loss = _LM.KLD_loss_w_dice_coef
 
+# loss = _LM.focal_CE_loss
+# loss = _LM.focal_CE_loss_w_iou_score
+# loss = _LM.focal_CE_loss_w_dice_coef
+# loss = _LM.constrained_focal_CE_loss
+# loss = _LM.constrained_focal_CE_loss_w_iou_score
+# loss = _LM.constrained_focal_CE_loss_w_dice_coef    # Good
+# loss = _LM.hausdorff_distance_loss
+# loss = _LM.hausdorff_distance_loss_w_iou_score
+loss = _LM.hausdorff_distance_loss_w_dice_coef      # Good
+
+# loss = _LM.series_combination_loss_w_iou_score
+# loss = _LM.series_combination_loss_w_dice_coef
+
 def get_loss(): return {loss.__name__: loss}
+
 
 # Metrics
 # NOTE: The metrics defined here MUST include the keys 'iou_score' and 'dice_coef' for monitoring the best performance model.
 # NOTE: The metrics defined in Loss_and_metrics.py are estimated / assumed values for each batch, NOT final results.
 def get_metrics(): return {'iou_score': _LM.iou_score, 'dice_coef': _LM.dice_coef, 'rou': _LM.rou, 'fpoet': _LM.fpoet}
 
+# Define loss and metrics.
+#############################################################################################
 
 
 
-# Define a custom callback
-#####################################################################
+
+#############################################################################################
+# Define custom callbacks
 
 # from tensorflow.keras.callbacks import Callback     ##### For TensorFlow v2 #####
 from keras.callbacks import Callback
@@ -182,16 +197,16 @@ class AutoLRManager(Callback):
         super(AutoLRManager, self).__init__(**kwargs)
         self.p = param
         self.bm_monitor = bm_monitor
-        print('Callback: AutoLRManager - Start monitoring the best metrics for learning rate decay...')
+        print('Callback: AutoLRManager - Start monitoring the best metrics for learning rate management...')
 
     def on_train_begin(self, logs=None):
-        self.LR_decay = 1.0
+        self.multiplier = 1.0
         self.n_good = 0
         self.n_bad = 0
 
     def on_epoch_end(self, epoch, logs=None):
         metrics_updated = self.bm_monitor.metrics_updated_in_Monitor()
-        print('Monitoring metrics for learning rate decay... [metrics: {0}]'.format('updated' if metrics_updated else 'Not updated'))
+        print('Monitoring metrics for learning rate management... [metrics: {0}]'.format('updated' if metrics_updated else 'Not updated'))
 
         if metrics_updated:
             self.n_good += 1
@@ -199,9 +214,9 @@ class AutoLRManager(Callback):
             step = self.p['step'][1]
             print('Count(s) of update = {0} (LR increased at {1} updates by x{2})'.format(self.n_good, self.p['patience'][1], step))
             if self.n_good >= self.p['patience'][1] and step != 1.0:
-                if   step < 1.0: self.LR_decay = max(self.p['limit'][1], self.LR_decay * step)
-                elif step > 1.0: self.LR_decay = min(self.p['limit'][1], self.LR_decay * step)
-                print('LR decay is set to {0} for the next epoch (step {1}, max {2})'.format(self.LR_decay, step, self.p['limit'][1]))
+                if   step < 1.0: self.multiplier = max(self.p['limit'][1], self.multiplier * step)
+                elif step > 1.0: self.multiplier = min(self.p['limit'][1], self.multiplier * step)
+                print('LR multiplier is set to {0} for the next epoch (step {1}, max {2})'.format(self.multiplier, step, self.p['limit'][1]))
                 self.n_good = 0
         else:
             self.n_good = 0
@@ -209,21 +224,24 @@ class AutoLRManager(Callback):
             step = self.p['step'][0]
             print('Count(s) of not-update = {0} (LR decreased at {1} patiences by x{2})'.format(self.n_bad, self.p['patience'][0], step))
             if self.n_bad >= self.p['patience'][0] and step != 1.0:
-                if   step < 1.0: self.LR_decay = max(self.p['limit'][0], self.LR_decay * step)
-                elif step > 1.0: self.LR_decay = min(self.p['limit'][0], self.LR_decay * step)
-                print('LR decay is set to {0} for the next epoch (step {1}, min {2})'.format(self.LR_decay, step, self.p['limit'][0]))
+                if   step < 1.0: self.multiplier = max(self.p['limit'][0], self.multiplier * step)
+                elif step > 1.0: self.multiplier = min(self.p['limit'][0], self.multiplier * step)
+                print('LR multiplier is set to {0} for the next epoch (step {1}, min {2})'.format(self.multiplier, step, self.p['limit'][0]))
                 self.n_bad = 0
 
         print(' ')
 
-    def get_LR_decay(self):
-        return self.LR_decay
+    def get_LR_multiplier(self):
+        return self.multiplier
+
+# Define custom callbacks
+#############################################################################################
 
 
 
 
-# Main training code
-#####################################################################
+#############################################################################################
+# Main training sequence
 
 def Train():
 
@@ -234,8 +252,8 @@ def Train():
     from datetime import datetime, timedelta, timezone
 
     import tensorflow as tf
-    import keras as _keras
 
+    import keras as _keras
     import keras.backend as K
     # from keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, TensorBoard, LearningRateScheduler
     from keras.callbacks import CSVLogger, LearningRateScheduler
@@ -243,12 +261,12 @@ def Train():
     from keras.models import load_model
 
     ##### For TensorFlow v2 #####
-    # from tensorflow import keras
-    # from tensorflow.keras import backend as K
-    # # from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, TensorBoard, LearningRateScheduler
-    # from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler
-    # from tensorflow.keras.utils import plot_model
-    # from tensorflow.keras.models import load_model
+#    from tensorflow import keras
+#    from tensorflow.keras import backend as K
+#    # from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, CSVLogger, TensorBoard, LearningRateScheduler
+#    from tensorflow.keras.callbacks import CSVLogger, LearningRateScheduler
+#    from tensorflow.keras.utils import plot_model
+#    from tensorflow.keras.models import load_model
 
 
     K.clear_session()
@@ -256,25 +274,21 @@ def Train():
     # NOTE: Data must be (samples, height, width, channels)
     if K.image_data_format() is not 'channels_last': K.set_image_data_format('channels_last')
 
+    JST = timezone(timedelta(hours=+9), 'JST')      # Japan Standard Time, Change it for your time zone
+    startdate = datetime.now(JST)
+    starttime = time.time()
 
-    # Initial parameters for learning rate (LR)
-    # Those values can be overwritten afterwards or at anytime you like
-    LR_params = {'formula'          : [None, 0.0, 0],               # Learning rate formula calculates LR at points of epochs - ['poly', base_lr, number_of_epochs] is available
-                 'graph'            : [[0,4e-3], [100,2e-3]],       # Learning rate graph defines LR at points of epochs - [[epoch_1, LR_1], [epoch_2, LR_2], ... [epoch_last, LR_last]]
-                 'step'             : [0.1, 2.0],                   # Multiplying values for LR decay - will be applied when mIoU is [NOT improved, improved]
-                 'limit'            : [0.01, 4.0],                  # Limitation of LR decay - when [NOT improved, improved]
-                 'patience'         : [1000, 1000] }                # Patience counts before applying step for LR decay - when [NOT improved, improved]
 
+    ############################################
+    # Training parameters
 
     # Load loss and metrics
     custom_loss = get_loss()
     custom_metrics = get_metrics()
 
-
     # Neural network model
     NN_model_path = sys.argv[1]
     NN = imm.SourceFileLoader(os.path.splitext(os.path.basename(NN_model_path))[0], NN_model_path).load_module()
-
     NN_info = []
 
 
@@ -284,44 +298,54 @@ def Train():
     try:    NN_model_descript    = NN.Model_Description()
     except: NN_model_descript, _ = 'Empty description.', NN_info.append('ALERT: Define description for the model in the neural network model file.')
 
-
-    # Number of classes in the loaded neural network model
     try:    NN_num_classes    = NN.Number_of_Classes()
     except: NN_num_classes, _ = 1, NN_info.append('NOTE: The number of classes was not defined in the neural network model file, automatically set to 1.')
 
-
-    # Batch size
     try:    NN_batch_size    = NN.Batch_Size()
     except: NN_batch_size, _ = 32, NN_info.append('NOTE: The batch size was not defined in the neural network model file, automatically set to 32.')
 
 
-    # Define learning rates
-    try:    LR_params['formula']    = NN.Learning_Rate_Formula()
-    except: LR_params['formula'], _ = [None, 0.0, 0], \
-                NN_info.append('ALERT: The LR formula was not defined in the neural network model file, automatically deactivated.')
+    # Initial parameters
+    LR_params = {'formula'          : [None, 0.0, 0],               # Learning rate formula calculates LR at points of epochs - ['poly', base_lr, number_of_epochs] is available
+                 'graph'            : [[0,4e-3], [100,2e-3]],       # Learning rate graph defines LR at points of epochs - [[epoch_1, LR_1], [epoch_2, LR_2], ... [epoch_last, LR_last]]
+                 'step'             : [0.1, 2.5],                   # Multiplying values to LR - will be applied when mIoU is [NOT improved, improved]
+                 'limit'            : [0.001, 1.0] ,                # Limitation of LR multiplier - when [NOT improved, improved]
+                 'patience'         : [1000, 1000],                 # Patience counts before applying step for LR - when [NOT improved, improved]
+                 'stop_count'       : 50 }                          # Define a count number before early stopping
 
-    try:    LR_params['graph']    = NN.Learning_Rate_Lsit()
-    except: LR_params['graph'], _ = [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]], \
-                NN_info.append('ALERT: The LR graph was not defined in the neural network model file, automatically set.')
-    # LR_params['graph'] = [[0, 7.81e-4], [5, 7.81e-4], [15, 6e-4], [30, 2e-4], [35, 1e-4], [50, 2e-5]]     # For aorta
-    # LR_params['graph'] = [[0, 7.81e-4], [30, 7.81e-4], [50, 6e-4], [100, 2e-4], [140, 1e-4], [200, 1e-5]]     # For heart
-    # LR_params['graph'] = [[0,2e-3], [50,2e-3], [80,1.5e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20191116
-    # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]                     # For heart 20200106
-    # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20190903
-    # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [180,3e-4], [250,6e-5]]     # For heart 20190903
-    # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [120,1.1e-3], [180,3e-4], [250,1e-4]]       # For heart 20191107
-    # LR_params['graph'] = [[0,1e-3], [100,1e-3]]       # For heart 20191118 Paper
-    # LR_params['graph'] = [[0, 1.5e-4], [30, 1.0e-4], [80, 0.2e-4], [130, 0.05e-4], [180, 0.01e-4]]     # For heart
-    # LR_params['graph'] = [[0, 7.81e-4], [2, 7.81e-4], [10, 2e-5]]     # For bone
+    LR_params_set = True
+    try:    LR_params = NN.Learning_Rate_Parameters()
+    except: LR_params_set, _ = False, NN_info.append('ALERT: The list of learning rate parameters was not defined in the neural network model file, trying to set separately.')
+
+    if not LR_params_set:
+        try:    LR_params['formula']    = NN.Learning_Rate_Formula()
+        except: NN_info.append('ALERT: The LR formula was not defined in the neural network model file, automatically deactivated.')
+
+        try:    LR_params['graph']    = NN.Learning_Rate_Lsit()
+        except: NN_info.append('ALERT: The LR graph was not defined in the neural network model file, automatically set.')
+        # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]
+        # LR_params['graph'] = [[0, 7.81e-4], [5, 7.81e-4], [15, 6e-4], [30, 2e-4], [35, 1e-4], [50, 2e-5]]     # For aorta
+        # LR_params['graph'] = [[0, 7.81e-4], [30, 7.81e-4], [50, 6e-4], [100, 2e-4], [140, 1e-4], [200, 1e-5]]     # For heart
+        # LR_params['graph'] = [[0,2e-3], [50,2e-3], [80,1.5e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20191116
+        # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.5e-3], [30,4.5e-3], [50,3e-3], [80,1e-3], [100,5e-4], [150,2e-4]]                     # For heart 20200106
+        # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [150,3e-4], [200,1e-4]]     # For heart 20190903
+        # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [100,1.1e-3], [180,3e-4], [250,6e-5]]     # For heart 20190903
+        # LR_params['graph'] = [[0,3e-3], [3,3.2e-3], [12,4.8e-3], [30,4.8e-3], [50,3.8e-3], [80,2e-3], [120,1.1e-3], [180,3e-4], [250,1e-4]]       # For heart 20191107
+        # LR_params['graph'] = [[0,1e-3], [100,1e-3]]       # For heart 20191118 Paper
+        # LR_params['graph'] = [[0, 1.5e-4], [30, 1.0e-4], [80, 0.2e-4], [130, 0.05e-4], [180, 0.01e-4]]     # For heart
+        # LR_params['graph'] = [[0, 7.81e-4], [2, 7.81e-4], [10, 2e-5]]     # For bone
+
+        try:    LR_params['patience']    = NN.Count_before_LR_Step()
+        except: NN_info.append('ALERT: The patience count for LR step was not defined in the neural network model file, automatically set.')
+
+        try:    LR_params['stop_count']    = NN.Count_before_Stop()
+        except: NN_info.append('ALERT: The count for early stopping was not defined in the neural network model file, automatically set.')
 
     if LR_params['formula'][0] is None: number_of_epochs = LR_params['graph'][-1][0]
     else:                               number_of_epochs = LR_params['formula'][2]
 
-
-    # Patience before early stopping
-    try:    patience_for_stop    = NN.Count_before_Stop()
-    except: patience_for_stop, _ = 20, \
-                NN_info.append('ALERT: The count for EarlyStopping() was not defined in the neural network model file, automatically set to 25.')
+    # Training parameters
+    ############################################
 
 
     # Resume training
@@ -348,11 +372,6 @@ def Train():
     else:
         print('ERROR : Invalid training mode!!!')
         sys.exit()
-
-
-    JST = timezone(timedelta(hours=+9), 'JST')      # Japan Standard Time, Change for your time
-    startdate = datetime.now(JST)
-    starttime = time.time()
 
 
     # Loaded neural network code may not have Custom_Layers()
@@ -417,11 +436,11 @@ def Train():
 
     os.makedirs(NN_dir_path)
     os.makedirs(utils_dir_path)
-    shutil.copy2(exeFilePath,   os.path.join(code_dir_path,  os.path.basename(exeFilePath)))        # Copy this file
-    shutil.copy2(NN_model_path, os.path.join(NN_dir_path,    os.path.basename(NN_model_path)))      # Copy model file
-    shutil.copy2(validFuncPath, os.path.join(utils_dir_path, os.path.basename(validFuncPath)))      # Copy loss and metrics file
+    shutil.copy2(trainFilePath,   os.path.join(code_dir_path,  os.path.basename(trainFilePath)))            # Copy this file
+    shutil.copy2(NN_model_path, os.path.join(NN_dir_path,    os.path.basename(NN_model_path)))              # Copy model file
+    shutil.copy2(lossAndMetricsPath, os.path.join(utils_dir_path, os.path.basename(lossAndMetricsPath)))    # Copy loss and metrics file
     if custom_layers:
-        shutil.copy2(os.path.join(exeDirPath, 'neural_networks', 'Custom_layers.py'), os.path.join(NN_dir_path, 'Custom_layers.py'))   # Copy layer file
+        shutil.copy2(os.path.join(trainDirPath, 'neural_networks', 'Custom_layers.py'), os.path.join(NN_dir_path, 'Custom_layers.py'))   # Copy layer file
 
 
     # Descriptions
@@ -444,7 +463,6 @@ def Train():
     print('Optimizer               : {0}'.format(optimizer.__class__.__name__))
     print('Loss                    : {0}'.format(loss.__name__))
     print('Metrics                 : {0}'.format(model.metrics_names[1:]))      # model.metrics_names[0] = 'loss'
-    print('Patience for early stop : {0}'.format(patience_for_stop))
     print('Custom layers           : {0}'.format(list(custom_layers.keys()) ))
     print('Batch size              : {0}'.format(NN_batch_size))
     print('Epochs                  : {0} - {1}'.format(init_epoch+1, number_of_epochs))
@@ -453,17 +471,11 @@ def Train():
     print('LR step                 : {0}'.format(LR_params['step']))
     print('LR limit                : {0}'.format(LR_params['limit']))
     print('Patience for LR step    : {0}'.format(LR_params['patience']))
+    print('Patience for early stop : {0}'.format(LR_params['stop_count']))
     print('__________________________________________________________________________________________________')
     if len(NN_info) > 0:
         for info in NN_info: print(info)
         print('__________________________________________________________________________________________________')
-
-
-    # Checkpoint
-    # key = input('Continue? [y/n] : ')
-    # if key != 'y' and key != 'Y':
-    #     print('Exit...')
-    #     sys.exit()
 
 
     # Image data generator
@@ -489,24 +501,21 @@ def Train():
     else               :  sys.exit()
 
 
-    # Define callbacks
+    # Allocate callbacks
     print('\n- Defining callbacks...')
-    bm_monitor = BestMetricsMonitor(validation=validation_images, model_base_path=model_base_path, nn_name=NN_model_name, patience=patience_for_stop)
+    bm_monitor = BestMetricsMonitor(validation=validation_images, model_base_path=model_base_path, nn_name=NN_model_name, patience=LR_params['stop_count'])
     lr_manager = AutoLRManager(param=LR_params, bm_monitor=bm_monitor)
 
     def ScheduleLR(epoch, lr):
         import math
         raw_lr = lr
-
         if LR_params['formula'][0] == 'poly':
             # See https://arxiv.org/pdf/1506.04579.pdf
             print('Learning rate by poly: base_lr = {0}, power = 0.9'.format(LR_params['formula'][1]))
             raw_lr = LR_params['formula'][1] * math.pow(1 - epoch / number_of_epochs, 0.9)
-
         # elif LR_params['formula'][0] == 'XXX':
         #     print('Learning rate by XXX: ...
         #     raw_lr = LR_params['formula'][1] ...
-
         elif LR_params['graph'] is not None:
             def LR_at_epoch(epoch, pt1, pt2): return (pt2[1] - pt1[1]) / (pt2[0] - pt1[0]) * (epoch - pt1[0]) + pt1[1]
             print('Learning rate by graph [epoch, LR] : {0}'.format(LR_params['graph']))
@@ -514,20 +523,19 @@ def Train():
                 if LR_params['graph'][i][0] <= epoch and epoch < LR_params['graph'][i+1][0]:
                     raw_lr = LR_at_epoch(epoch, LR_params['graph'][i], LR_params['graph'][i+1])
                     break
-
-        decay = lr_manager.get_LR_decay()
-        new_LR = decay * raw_lr
-        print('LR = {0} (raw LR = {1}, decay = {2})'.format(new_LR, raw_lr, decay))
+        m = lr_manager.get_LR_multiplier()
+        new_LR = m * raw_lr
+        print('LR = {0} (raw LR = {1}, multiplier = {2})'.format(new_LR, raw_lr, m))
         return new_LR
 
     # check_pointer = ModelCheckpoint(model_base_path, monitor=LR_params['monitor_for_best'][0], verbose=1, save_best_only=True, mode=LR_params['monitor_for_best'][1])
-    # early_stopper = EarlyStopping(monitor=LR_params['monitor_for_best'][0], min_delta=0, patience=patience_for_stop, verbose=1, mode=LR_params['monitor_for_best'][1])
+    # early_stopper = EarlyStopping(monitor=LR_params['monitor_for_best'][0], min_delta=0, patience=LR_params['stop_count'], verbose=1, mode=LR_params['monitor_for_best'][1])
     lr_scheduler = LearningRateScheduler(ScheduleLR, verbose=0)
     csv_logger = CSVLogger(os.path.join(work_dir_path,'training_log.csv'), separator=',', append=False)
     # tensorboard = TensorBoard(log_dir=work_dir_path, histogram_freq=0, write_graph=True, write_images=True)
 
 
-    # Save network figure and parameters
+    # Save descriptions, network figure and parameters
     plot_model(model, to_file=os.path.join(work_dir_path,'model_figure.png'), show_shapes=True, show_layer_names=False)
     with open(os.path.join(work_dir_path,'training_parameters.txt'), mode='w') as path_file:
         path_file.write('Date                    : {0}\n'.format(startdate))
@@ -548,7 +556,6 @@ def Train():
         path_file.write('Optimizer               : {0}\n'.format(optimizer.__class__.__name__))
         path_file.write('Loss                    : {0}\n'.format(loss.__name__))
         path_file.write('Metrics                 : {0}\n'.format(model.metrics_names[1:]))
-        path_file.write('Patience for early stop : {0}\n'.format(patience_for_stop))
         path_file.write('Custom layers           : {0}\n'.format(list(custom_layers.keys()) ))
         path_file.write('Batch size              : {0}\n'.format(NN_batch_size))
         path_file.write('Epochs                  : {0} - {1}\n'.format(init_epoch+1, number_of_epochs))
@@ -557,6 +564,7 @@ def Train():
         path_file.write('LR step                 : {0}\n'.format(LR_params['step']))
         path_file.write('LR limit                : {0}\n'.format(LR_params['limit']))
         path_file.write('Patience for LR step    : {0}\n\n'.format(LR_params['patience']))
+        path_file.write('Patience for early stop : {0}\n'.format(LR_params['stop_count']))
         if len(NN_info) > 0:
             for info in NN_info: path_file.write('{}\n'.format(info))
         path_file.write('\n')
@@ -575,47 +583,46 @@ def Train():
         https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit
         https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit_generator
     '''
-    print('\n- Starting model learning...')
-    # results = model.fit_generator(
-    #     generator               = training_images,
-    #     epochs                  = number_of_epochs,
-    #     verbose                 = 1,
-    #     callbacks               = [bm_monitor, lr_manager, lr_scheduler, csv_logger],
-    #     validation_data         = validation_images,
-    #     max_queue_size          = 10,
-    #     workers                 = 1,
-    #     use_multiprocessing     = False,
-    #     shuffle                 = False,
-    #     initial_epoch           = init_epoch )
-
+    print('\n- Starting model training...')
     results = model.fit_generator(
-        generator               = training_images.flow(),
-        steps_per_epoch         = training_images.datalength() // NN_batch_size,
+        generator               = training_images,
         epochs                  = number_of_epochs,
         verbose                 = 1,
         callbacks               = [bm_monitor, lr_manager, lr_scheduler, csv_logger],
-        validation_data         = validation_images.flow(),
-        validation_steps        = validation_images.datalength() // NN_batch_size,
+        validation_data         = validation_images,
         max_queue_size          = 10,
         workers                 = 1,
         use_multiprocessing     = False,
         shuffle                 = False,
         initial_epoch           = init_epoch )
 
+#    results = model.fit_generator(
+#        generator               = training_images.flow(),
+#        steps_per_epoch         = training_images.datalength() // NN_batch_size,
+#        epochs                  = number_of_epochs,
+#        verbose                 = 1,
+#        callbacks               = [bm_monitor, lr_manager, lr_scheduler, csv_logger],
+#        validation_data         = validation_images.flow(),
+#        validation_steps        = validation_images.datalength() // NN_batch_size,
+#        max_queue_size          = 10,
+#        workers                 = 1,
+#        use_multiprocessing     = False,
+#        shuffle                 = False,
+#        initial_epoch           = init_epoch )
+
     ##### For TensorFlow v2 #####
-    # results = model.fit(
-    #     x                       = training_images,      # keras.utils.Sequence
-    #     epochs                  = number_of_epochs,
-    #     verbose                 = 1,
-    #     # callbacks               = [check_pointer, early_stopper, lr_manager, lr_scheduler, csv_logger, tensorboard],
-    #     callbacks               = [check_pointer, early_stopper, lr_manager, lr_scheduler, csv_logger],
-    #     validation_data         = validation_images.getdata(),  # tuple of Numpy arrays
-    #     shuffle                 = False,
-    #     initial_epoch           = init_epoch,
-    #     validation_freq         = 1,
-    #     max_queue_size          = 10,
-    #     workers                 = 1,
-    #     use_multiprocessing     = False )
+#    results = model.fit(
+#        x                       = training_images,                  # keras.utils.Sequence
+#        epochs                  = number_of_epochs,
+#        verbose                 = 1,
+#        callbacks               = [bm_monitor, lr_manager, lr_scheduler, csv_logger],
+#        validation_data         = validation_images.getdata(),      # tuple of Numpy arrays
+#        shuffle                 = False,
+#        initial_epoch           = init_epoch,
+#        validation_freq         = 1,
+#        max_queue_size          = 10,
+#        workers                 = 1,
+#        use_multiprocessing     = False )
 
 
     # Show results
@@ -657,19 +664,6 @@ def Train():
 
     except:
         print('ALERT: Failed to save the training graph figure.')
-
-
-    # Save the trained model
-    # print('\n- Saving trained model...')
-    # save_name = 'model{0}, mIoU={1:.4f}, {2} by {3}.h5'.format(datestr, np.nanmax(his_valmiou), training_mode, NN_model_name)
-    # save_path = os.path.join(work_dir_path, save_name)
-    # model.save(filepath=save_path, overwrite=True, include_optimizer=True)
-    # time.sleep(20)
-    # print('Final model path: ' + save_path)
-
-    # if os.path.exists(model_base_path):
-    #     os.remove(model_base_path)
-    #     print('Temp model removed: ' + model_base_path)
 
 
     print('\n==================================================================================================')

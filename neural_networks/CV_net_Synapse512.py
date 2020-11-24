@@ -25,13 +25,13 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers.merge import Concatenate
 
 ##### For TensorFlow v2 #####
-# from tensorflow import keras
-# from tensorflow.keras import backend as K
-# from tensorflow.keras.models import Model
-# from tensorflow.keras.layers import Input, Layer, BatchNormalization, Activation, ZeroPadding2D
-# from tensorflow.keras.layers import Conv2D, SeparableConv2D, Conv2DTranspose, UpSampling2D, MaxPooling2D
-# from tensorflow.keras.layers import Concatenate
-# from tensorflow.keras.layers import Dropout, SpatialDropout2D, GaussianDropout, GaussianNoise
+#from tensorflow import keras
+#from tensorflow.keras import backend as K
+#from tensorflow.keras.models import Model
+#from tensorflow.keras.layers import Input, Layer, BatchNormalization, Activation, ZeroPadding2D
+#from tensorflow.keras.layers import Conv2D, SeparableConv2D, Conv2DTranspose, UpSampling2D, MaxPooling2D
+#from tensorflow.keras.layers import Concatenate
+#from tensorflow.keras.layers import Dropout, SpatialDropout2D, GaussianDropout, GaussianNoise
 
 
 
@@ -47,9 +47,9 @@ from keras.regularizers import l2
 from keras.engine.base_layer import InputSpec
 
 ##### For TensorFlow v2 #####
-# from tensorflow.keras.initializers import TruncatedNormal
-# from tensorflow.keras.regularizers import l2
-# from tensorflow.keras.layers import InputSpec
+#from tensorflow.keras.initializers import TruncatedNormal
+#from tensorflow.keras.regularizers import l2
+#from tensorflow.keras.layers import InputSpec
 
 class SynapticTransmissionRegulator(Layer):
 
@@ -135,41 +135,36 @@ def Batch_Size(): return 16     # for nVidia TITAN RTX, 24GB VRAM
     Define an optimizer used for training.
 '''
 from keras.optimizers import SGD, Adam, Nadam
-# from tensorflow.keras.optimizers import SGD, Adam, Nadam      ##### For TensorFlow v2 #####
+#from tensorflow.keras.optimizers import SGD, Adam, Nadam      ##### For TensorFlow v2 #####
 def Optimizer(base_lr=0.1): return SGD(lr=base_lr, momentum=0.95, nesterov=True)
-# def Optimizer(base_lr=0.001): return Adam(lr=base_lr, beta_1=0.9, beta_2=0.999, amsgrad=False)
-# def Optimizer(base_lr=0.001): return Nadam(lr=base_lr, beta_1=0.9, beta_2=0.999)
+# def Optimizer(base_lr=0.001): return Adam(lr=base_lr, clipnorm=2.0, beta_1=0.9, beta_2=0.999, amsgrad=False)
+# def Optimizer(base_lr=0.001): return Nadam(lr=base_lr, clipnorm=2.0, beta_1=0.9, beta_2=0.999)
 
 
 '''
-    Define learning rate
+    Define learning rate parameters.
+
     By formula : ['poly', base_lr, number_of_epochs]
-    By graph : [[epoch, learning rate], [..., ...] ..., [number_of_epochs, final learning rate]]
-               Learning rates between epochs will be interpolated linearly.
+    By graph   : [[epoch, learning rate], [..., ...] ..., [number_of_epochs, final learning rate]]
+                 Learning rates between epochs will be interpolated linearly.
     Note: The graph will NOT be used when the formula is defined. In other words, the formula is used prior to the graph.
 '''
-# def Learning_Rate_Formula(): return [None, 0.0, 0]
-def Learning_Rate_Formula(): return ['poly', 0.35, 80]          # For heart structures
-# def Learning_Rate_Formula(): return ['poly', 0.50, 100]         # For AS calcium
-# def Learning_Rate_Formula(): return ['poly', 0.50, 50]
-# def Learning_Rate_Formula(): return ['poly', 0.25, 50]        # For heart structures / SGD / batch size = 16
-# def Learning_Rate_Formula(): return ['poly', 0.5, 50]         # For heart structures / SGD / batch size = 42
-# def Learning_Rate_Formula(): return ['poly', 0.5, 100]        # For brain tumor / SGD / batch size = 16
-# def Learning_Rate_Formula(): return ['poly', 0.25, 20]        # For aorta / SGD
+def Learning_Rate_Parameters():
 
-# def Learning_Rate_Lsit(): return [[0,1e-3], [50,5e-1]]   # TEST
+# def Learning_Rate_Formula(): return ['poly', 0.10, 50]          # For retraining
+# def Learning_Rate_Formula(): return ['poly', 0.35, 100]         # base_lr = 0.35 is the best for CV-net SYNAPSE
 # def Learning_Rate_Lsit(): return [[0,3e-3], [10,3e-3], [50,1e-3], [70,5e-4], [100,2e-4]]
 # def Learning_Rate_Lsit(): return [[0, 1e-3], [5, 1.5e-3], [15, 1e-3], [30, 1e-4]]     # Not good
 # def Learning_Rate_Lsit(): return [[0, 5e-3], [5, 1e-2], [10, 1e-2], [20, 2e-3]]     # For aorta / Adam, Nadam
+# def Learning_Rate_Lsit(): return [[0, 5e-3], [5, 1.5e-2], [10, 1.5e-2], [20, 1e-2], [30, 7.5e-3], [50, 5e-3]]     # LR used for comparing CV-net SYNAPSE, DeepLab v3+ and U-net
 
-# LR used for comparing CV-net SYNAPSE, DeepLab v3+ and U-net
-def Learning_Rate_Lsit(): return [[0, 5e-3], [5, 1.5e-2], [10, 1.5e-2], [20, 1e-2], [30, 7.5e-3], [50, 5e-3]]
-
-
-'''
-    Define a count number before early stopping.
-'''
-def Count_before_Stop(): return 40
+    LR_params = {'formula'          : ['poly', 0.35, 100],          # Learning rate formula calculates LR at points of epochs - ['poly', base_lr, number_of_epochs] is available
+                 'graph'            : [[0,0.0], [1,0.0]],           # Learning rate graph defines LR at points of epochs - [[epoch_1, LR_1], [epoch_2, LR_2], ... [epoch_last, LR_last]]
+                 'step'             : [0.1, 5.0],                   # Multiplying values to LR - will be applied when mIoU is [NOT improved, improved]
+                 'limit'            : [0.01, 1.0] ,                 # Limitation of LR multiplier - when [NOT improved, improved]
+                 'patience'         : [15, 1],                      # Patience counts before applying step for LR - when [NOT improved, improved]
+                 'stop_count'       : 50 }                          # Define a count number before early stopping
+    return LR_params
 
 
 
@@ -266,9 +261,12 @@ def Build_Model():
     # NOTE: The larger values (around 0.5) may be better when segmentation will have large area such as the heart
     # On the other hand, for small segmentation area such as calcium deposits on a valve,
     # the rate for SpatialDropout2D should be ZERO and the stddev for GaussianNoise should be small
-    _dropout_rate1  = (0.25, 0.25)          # (rate for GaussianDropout, rate for SpatialDropout2D)
-    _dropout_rate2  = (0.50, 0.50)          # (rate for GaussianDropout, rate for SpatialDropout2D)
-    _stddev_g_noise = 0.25                  # std.deviation for GaussianNoise
+    # _dropout_rate1  = (0.25, 0.25)          # (rate for GaussianDropout, rate for SpatialDropout2D)
+    # _dropout_rate2  = (0.50, 0.50)          # (rate for GaussianDropout, rate for SpatialDropout2D)
+    # _stddev_g_noise = 0.25                  # std.deviation for GaussianNoise
+    _dropout_rate1  = (0.20, 0.0)           # (rate for GaussianDropout, rate for SpatialDropout2D)
+    _dropout_rate2  = (0.40, 0.0)           # (rate for GaussianDropout, rate for SpatialDropout2D)
+    _stddev_g_noise = 0.10                  # std.deviation for GaussianNoise
 
 
     # Do not change "name='input'", because the name is used to identify the input layer in A.I.Segmentation.

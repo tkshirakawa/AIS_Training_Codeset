@@ -25,11 +25,15 @@ Before you use this codeset and system, you need:
 This codeset contains:
 - Preprocessing codes for image augmentation, list generation of images, HDF5 archiving, etc.
 - A training management code with a learning rate controller and metrics monitor.
-- Custom loss, metrics and layers for advanced training.
-- Neural network models of Keras: CV-net SYNAPSE, U-net and DeepLab v3+ [1].
-- A converter code to convert a trained Keras model to a Core ML model for macOS [2].
+- Custom loss, metrics and layers for advanced training [1].
+- Neural network models of Keras: CV-net SYNAPSE, U-net and DeepLab v3+ [2].
+- A converter code to convert a trained Keras model to a Core ML model for macOS [3].
 
-> [1] Original sources of neural network models are  
+> [1] Special losses and metrics implemented in this codeset  
+> Focal CE loss: Tsung-Yi Lin, et al., Focal Loss for Dense Object Detection, [arXivk, 2018(v2)](https://arxiv.org/abs/1708.02002v2)
+> Constrained focal CE loss: Y. Zhao, et al., Constrained-Focal-Loss Based Deep Learning for Segmentation of Spores, [IEEE Access vol.7, 2019](https://ieeexplore.ieee.org/document/8896836)
+> Hausdorff distance loss: Karimi D, et al., Reducing the Hausdorff Distance in Medical Image Segmentation With Convolutional Neural Networks, [IEEE Trans Med Imaging, 2020](https://ieeexplore.ieee.org/document/8767031)
+> [2] Neural network models  
 > **CV-net SYNAPSE: my original neural network**  
 > U-net: implementation by chuckyee - [chuckyee/cardiac-segmentation in GitHub](https://github.com/chuckyee/cardiac-segmentation)  
 > DeepLab v3+: implementation by bonlime - [bonlime/keras-deeplab-v3-plus in GitHub](https://github.com/bonlime/keras-deeplab-v3-plus)  

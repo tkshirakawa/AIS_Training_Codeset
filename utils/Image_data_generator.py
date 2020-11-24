@@ -24,14 +24,14 @@ import numpy as np
 
 
 import tensorflow as tf
+
 from keras import backend as K
-# from keras.utils import Sequence
+from keras.utils import Sequence
 
 ##### For TensorFlow v2 #####
-# import tensorflow as tf
-# from tensorflow import keras
-# from tensorflow.keras import backend as K
-# from tensorflow.keras.utils import Sequence
+#from tensorflow import keras
+#from tensorflow.keras import backend as K
+#from tensorflow.keras.utils import Sequence
 
 
 '''
@@ -49,8 +49,8 @@ from keras import backend as K
 # You should not shuffle the rows in .csv file, or image loading speed will be decreased.
 # Images must be gray-scale without alpha values.
 
-# class ImageDataGenerator_CSV_with_Header(Sequence):       ##### For TensorFlow v2 #####
-class ImageDataGenerator_CSV_with_Header():
+class ImageDataGenerator_CSV_with_Header(Sequence):       ##### For TensorFlow v2 #####
+# class ImageDataGenerator_CSV_with_Header():
 
     def __init__(self, dataname, datafile, batch_size=32, rescale=1.0, shuffle=True):
         self.batch_size = batch_size
@@ -118,14 +118,14 @@ class ImageDataGenerator_CSV_with_Header():
 
 
     # Number of batch in the Sequence       ##### For TensorFlow v2 #####
-    # def __len__(self): return math.ceil(self.length_ / self.batch_size)
+    def __len__(self): return math.ceil(self.length_ / self.batch_size)
 
 
     # Gets batch at position index          ##### For TensorFlow v2 #####
-    # def __getitem__(self, index):
-    #     X_batch = K.cast_to_floatx(self.rescale * self.X_[index*self.batch_size : (index+1)*self.batch_size])
-    #     Y_batch = K.cast_to_floatx(self.rescale * self.Y_[index*self.batch_size : (index+1)*self.batch_size])
-    #     return (X_batch, Y_batch)
+    def __getitem__(self, index):
+        X_batch = K.cast_to_floatx(self.rescale * self.X_[index*self.batch_size : (index+1)*self.batch_size])
+        Y_batch = K.cast_to_floatx(self.rescale * self.Y_[index*self.batch_size : (index+1)*self.batch_size])
+        return (X_batch, Y_batch)
 
 
     def datalength(self): return self.length_
@@ -151,8 +151,8 @@ class ImageDataGenerator_CSV_with_Header():
 # Image data generator for h5 file
 #####################################################################
 
-# class ImageDataGenerator_h5_Dataset(Sequence):        ##### For TensorFlow v2 #####
-class ImageDataGenerator_h5_Dataset():
+class ImageDataGenerator_h5_Dataset(Sequence):        ##### For TensorFlow v2 #####
+# class ImageDataGenerator_h5_Dataset():
 
     def __init__(self, dataname, datafile, batch_size=32, rescale=1.0):
         self.batch_size = batch_size
@@ -176,14 +176,14 @@ class ImageDataGenerator_h5_Dataset():
 
 
     # Number of batch in the Sequence       ##### For TensorFlow v2 #####
-    # def __len__(self): return math.ceil(self.length_ / self.batch_size)
+    def __len__(self): return math.ceil(self.length_ / self.batch_size)
 
 
     # Gets batch at position index          ##### For TensorFlow v2 #####
-    # def __getitem__(self, index):
-    #     X_batch = K.cast_to_floatx(self.rescale * self.X_[index*self.batch_size : (index+1)*self.batch_size])
-    #     Y_batch = K.cast_to_floatx(self.rescale * self.Y_[index*self.batch_size : (index+1)*self.batch_size])
-    #     return (X_batch, Y_batch)
+    def __getitem__(self, index):
+        X_batch = K.cast_to_floatx(self.rescale * self.X_[index*self.batch_size : (index+1)*self.batch_size])
+        Y_batch = K.cast_to_floatx(self.rescale * self.Y_[index*self.batch_size : (index+1)*self.batch_size])
+        return (X_batch, Y_batch)
 
 
     def datalength(self): return self.length_
